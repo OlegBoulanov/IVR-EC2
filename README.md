@@ -13,3 +13,8 @@ Lifecycle (run in project directory):
 - cdk synth (will create cdk.context.json, if does not exist)
 - cdk deploy -v
 - cdk destroy -v
+
+References
+
+- AWS CDK github: https://github.com/aws/aws-cdk
+- Guide: https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html

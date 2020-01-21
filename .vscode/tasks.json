@@ -2,41 +2,42 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build",
-            "command": "dotnet",
-            "type": "process",
+            "label": "synth",
+            "command": "cdk",
+            "type": "shell",
             "args": [
-                "build",
-                "${workspaceFolder}/src/Ivr/Ivr.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "synth",
             ],
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "publish",
-            "command": "dotnet",
-            "type": "process",
+            "label": "deploy",
+            "command": "cdk",
+            "type": "shell",
             "args": [
-                "publish",
-                "${workspaceFolder}/src/Ivr/Ivr.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "deploy", 
+                "-v",
             ],
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "watch",
-            "command": "dotnet",
-            "type": "process",
+            "label": "destroy",
+            "command": "cdk",
+            "type": "shell",
             "args": [
-                "watch",
-                "run",
-                "${workspaceFolder}/src/Ivr/Ivr.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "destroy", 
+                "-v",
             ],
             "problemMatcher": "$msCompile"
-        }
+        },
+        {
+            "label": "diff",
+            "command": "cdk",
+            "type": "shell",
+            "args": [
+                "diff", 
+            ],
+            "problemMatcher": "$msCompile"
+        },
     ]
 }

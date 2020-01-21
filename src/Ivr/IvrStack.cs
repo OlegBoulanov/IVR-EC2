@@ -16,6 +16,7 @@ namespace Ivr
 {
     public class IvrStack : Stack
     {
+        public string RdpPublicCidr { get; set; }
         public IVpc Vpc { get; protected set; }
         public Instance_ Instance {get; protected set; }
         public UserData UserData { get; protected set; }
@@ -29,7 +30,6 @@ namespace Ivr
             {
                 VpcName = "120"
             });
-
             WriteLine($"VPC: {Vpc.VpcId}/{Vpc.VpcCidrBlock}");
 
             var publicSubnets = Vpc.PublicSubnets;
@@ -53,17 +53,13 @@ namespace Ivr
                 AllowAllOutbound = true,
             });
             securityGroup.AddIngressRule(Peer.Ipv4($"10.27.0.0/16"), Port.Tcp(3389), "RDP-Private");
-            var myPublicIP = System.Environment .GetEnvironmentVariable("RDP_PUBLIC_IP");
-            if(!string.IsNullOrWhiteSpace(myPublicIP)) {
-                securityGroup.AddIngressRule(Peer.Ipv4($"{myPublicIP}/32"), Port.Tcp(3389), "RDP-Public");
+            if(!string.IsNullOrWhiteSpace(RdpPublicCidr)) {
+                securityGroup.AddIngressRule(Peer.Ipv4($"{RdpPublicCidr}"), Port.Tcp(3389), "RDP-Public");
             } 
-            else {
-                WriteLine($"??? CDK_PUBLIC_IP is not set, No RDP access will be added");
-            }
-
             WriteLine($"SG: {securityGroup.SecurityGroupVpcId}");
 
-            // install software
+
+            // install software            
             var dotnet30 = "https://download.visualstudio.microsoft.com/download/pr/d12cc6fa-8717-4424-9cbf-d67ae2fb2575/b4fff475e67917918aa2814d6f673685/dotnet-runtime-3.0.1-win-x64.exe";
             var s3i = "https://github.com/OlegBoulanov/s3i/releases/download/v1.0.315/s3i.msi";
 
