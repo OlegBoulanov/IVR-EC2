@@ -59,7 +59,7 @@ else
         rm -f ${AWS_DIR}/credentials
         rm -f ${OKTA_DIR}/profiles
         rm -f ${OKTA_DIR}/.current-session
-        echo "Not assigned" >${OKTA_DIR}/.current-arn
+        echo "No role assumed" >${OKTA_DIR}/.current-arn
         cp ${ACCOUNTS_DIR}/${ACCOUNT_NAME}/*.* ${OKTA_DIR}/
 
         OKTA_CI=$(xokta-aws ${PROFILE} sts get-caller-identity)
