@@ -20,12 +20,12 @@ function xokta-aws {
 }
 
 function print_region {
-        REGION=$(cat ${AWS_DIR}/credentials | grep region | cut -d "=" -f 2)
-        echo "  Region: " ${REGION}
+        echo "  Region: " $(cat ${AWS_DIR}/credentials | grep region | cut -d "=" -f 2)
 }
 
 function print_current_info {
         echo "Current session:" 
+        print_region
         echo "  Assumed:" $(cat ${OKTA_DIR}/.current-arn)
         EXPIRY=$(cat ${OKTA_DIR}/.current-session | grep _EXPIRY | cut -d "=" -f 2)
         EXPIRE=$(date -d "${EXPIRY//\\:/:}")
@@ -38,31 +38,32 @@ function print_current_info {
         else
                 echo "  Expired." ${EXPIRE}
         fi
-        print_region
 }
 
 function print_accounts {
         echo Existing accounts \(in ${ACCOUNTS_DIR}/\) are:
         find ${ACCOUNTS_DIR}/ -mindepth 1 -maxdepth 1 -type d -printf "  %P\n"
-        print_current_info
 }
 
 if [ -z "${ACCOUNT_NAME}" ]
 then
         echo "Account name is required:" "$0" "account [profile=${PROFILE}]"
         print_accounts
+        print_current_info
 elif [ ! -d "${ACCOUNTS_DIR}/${ACCOUNT_NAME}" ]
 then
         echo Invalid account name ${ACCOUNT_NAME}.
         print_accounts
+        print_current_info
 else
         rm -f ${AWS_DIR}/credentials
         rm -f ${OKTA_DIR}/profiles
         rm -f ${OKTA_DIR}/.current-session
-        echo "No role assumed" >${OKTA_DIR}/.current-arn
+        echo "no role" >${OKTA_DIR}/.current-arn
         cp ${ACCOUNTS_DIR}/${ACCOUNT_NAME}/*.* ${OKTA_DIR}/
-
+        #-----------------------------
         OKTA_CI=$(xokta-aws ${PROFILE} sts get-caller-identity)
+        #-----------------------------
         AWS_ARN=$(echo ${OKTA_CI} | egrep "arn:[^ ]+" -o)
         AWS_ARN=${AWS_ARN//\"/}
         echo ${AWS_ARN} >${OKTA_DIR}/.current-arn
