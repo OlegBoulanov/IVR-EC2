@@ -25,7 +25,8 @@ function print_region {
 }
 
 function print_current_info {
-        echo "Current session:"
+        echo "Current session:" 
+        echo "  Assumed:" $(cat ${OKTA_DIR}/.current-arn)
         EXPIRY=$(cat ${OKTA_DIR}/.current-session | grep _EXPIRY | cut -d "=" -f 2)
         EXPIRE=$(date -d "${EXPIRY//\\:/:}")
         TS_EXP=$(date -d "${EXPIRE}" "+%s")
@@ -48,7 +49,7 @@ function print_accounts {
 
 if [ -z "${ACCOUNT_NAME}" ]
 then
-        echo Account name is required.
+        echo "Account name is required:" "$0" "account [profile=${PROFILE}]"
         print_accounts
 elif [ ! -d "${ACCOUNTS_DIR}/${ACCOUNT_NAME}" ]
 then
@@ -58,10 +59,13 @@ else
         rm -f ${AWS_DIR}/credentials
         rm -f ${OKTA_DIR}/profiles
         rm -f ${OKTA_DIR}/.current-session
+        echo "Not assigned" >${OKTA_DIR}/.current-arn
         cp ${ACCOUNTS_DIR}/${ACCOUNT_NAME}/*.* ${OKTA_DIR}/
 
-        OKTACI=$(xokta-aws ${PROFILE} sts get-caller-identity | grep "arn" | cut -d ":" -f 2-)
-        echo "  Assumed:" ${OKTACI//\"/}
+        OKTA_CI=$(xokta-aws ${PROFILE} sts get-caller-identity)
+        AWS_ARN=$(echo ${OKTA_CI} | egrep "arn:[^ ]+" -o)
+        AWS_ARN=${AWS_ARN//\"/}
+        echo ${AWS_ARN} >${OKTA_DIR}/.current-arn
 
         print_current_info
 fi
