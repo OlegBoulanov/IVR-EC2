@@ -16,7 +16,9 @@ TS_NOW=$(date "+%s")
 
 function xokta-aws {
         # use the tool to ask for user credentials and update .aws/credentials
+        stty -echo
         ${OKTA_DIR}/bin/withokta "aws --profile $1" "$@"
+        stty echo
 }
 
 function print_region {

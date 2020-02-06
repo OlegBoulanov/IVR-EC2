@@ -14,56 +14,38 @@ namespace Ivr
     {
         public static void Main(string[] args)
         {
-            var userProfile = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
-            var userCdkJsonFile = $"{userProfile}{Path.DirectorySeparatorChar}cdk.json";
-            try
-            {
-                using (var stream = new FileStream(userCdkJsonFile, FileMode.Open))
-                {
-                    var jd = JsonDocument.Parse(stream);
-
-                    var e = jd.RootElement.Select("context", "RdpCidr", "Public");
-                    
-                }
-            }
-            catch(FileNotFoundException)
-            { 
-                // no special user settings
-            }
-            catch(JsonException x)
-            {
-                throw new FileLoadException("Error parsing json", userCdkJsonFile, x);
-            }
-            catch (InvalidOperationException x)
-            {
-                throw new FileLoadException(x.Message, userCdkJsonFile, x);
-            }
-            catch (Exception x)
-            {
-                throw new FileLoadException($"{x.GetType().Name}: {x.Message}", userCdkJsonFile, x);
-            }
-
-            //return;
-            var account = System.Environment.GetEnvironmentVariable("CDK_DEFAULT_ACCOUNT");
-            var region = System.Environment.GetEnvironmentVariable("CDK_DEFAULT_REGION");
-            System.Console.WriteLine($"Main(): CdkAcc: {account}/{region}");
-
-            var rdpPublicCidr = System.Environment .GetEnvironmentVariable("RDP_PUBLIC_CIDR");
-            if(string.IsNullOrWhiteSpace(rdpPublicCidr)) {
-                WriteLine($"Main(): RDP_PUBLIC_IP is not set");
-            }            
 
             var app = new App();
-            var ivrStack = new IvrStack(app, "IvrStack", new StackProps
+
+            // default (public) context parameters
+            var account = app.Node.TryGetContext("account") as string;
+            if(string.IsNullOrWhiteSpace(account)) account = System.Environment.GetEnvironmentVariable("CDK_DEFAULT_ACCOUNT");
+
+            var region = app.Node.TryGetContext("region") as string;
+            if(string.IsNullOrWhiteSpace(region)) region = System.Environment.GetEnvironmentVariable("CDK_DEFAULT_REGION");
+            System.Console.WriteLine($"Account/region: {account}/{region}");
+
+            // mandatory (proprietary) context parameters
+            var rdps = app.Node.TryGetContext("rdps") as string;
+            if(string.IsNullOrWhiteSpace(rdps)) throw new ApplicationException("No RDP CIDR specified, use '-c rdps=<comma-separated_RDP_CIDRs>'");
+
+            var keypair = app.Node.TryGetContext("keypair") as string;
+            if(string.IsNullOrWhiteSpace(keypair)) throw new ApplicationException("No KeyPair name specified, use '-c keypair=<name>'");
+
+            //throw new ApplicationException("ENOUGH");
+
+            var ivrStack = new IvrStack(app, "IvrStack", new IvrStackProps
             {
                 Env = new Amazon.CDK.Environment
                 {
                     Account = account,
                     Region = region,
-                }
+                },
+                KeyName = keypair,
+                IngressRules = new Dictionary<string, int>(rdps.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(x => new KeyValuePair<string, int>(x, 3389))),
             });
-            ivrStack.RdpPublicCidr = rdpPublicCidr;
-            // now run it again
+
+            // do work
             app.Synth();
         }
     }
