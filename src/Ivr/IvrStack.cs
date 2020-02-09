@@ -18,7 +18,6 @@ namespace Ivr
     {
         public IVpc Vpc { get; protected set; }
         public Instance_ Instance { get; protected set; }
-        public UserData UserData { get; protected set; }
         internal IvrStack(Construct scope, string id, IvrStackProps props = null) : base(scope, id, props)
         {
             this.Vpc = new Ivr.Vpc(this, $"{id}_Vpc", new VpcProps
@@ -66,6 +65,27 @@ namespace Ivr
 //            });
 //            WriteLine($"EIP: {eip.LogicalId}");
 
+            var userData = UserData.ForWindows();
+            if(!string.IsNullOrWhiteSpace(props.UserName) && !string.IsNullOrWhiteSpace(props.UserPassword))
+            {
+                userData.WithNewUser(props.UserName, props.UserPassword, props.UserGroups);
+            }
+            userData.WithNewFolder("C:\\ProgramData\\IvrStack\\Distrib\\")
+                .WithDownloadAndInstall(
+                    "https://aka.ms/vs/16/release/vc_redist.x86.exe",
+                    "https://download.visualstudio.microsoft.com/download/pr/d12cc6fa-8717-4424-9cbf-d67ae2fb2575/b4fff475e67917918aa2814d6f673685/dotnet-runtime-3.0.1-win-x64.exe",
+                    "https://github.com/OlegBoulanov/s3i/releases/download/v1.0.315/s3i.msi"
+                )
+                .WithEnvironmentVariables(new Dictionary<string, string>{
+                    {"s3i_args", "\"https://s3-ap-southeast-2.amazonaws.com/install.ap-southeast-2.elizacorp.com/CHAU-01/s3i.ini --verbose\"" },
+                })
+                // need AWS credentials?
+                .WithFiles(new Dictionary<string, string>{
+                    { ".aws/credentials", $"[default]\ncredential_source = Ec2InstanceMetadata\nrole_arn = arn:aws:iam::{props.Env.Account}:role/{role.RoleName}" },
+                })
+                .WithCommands("s3i");
+                /*
+                */
             this.Instance = new Instance_(this, $"{id}_Instance", new InstanceProps
             {
                 InstanceType = InstanceType.Of(InstanceClass.BURSTABLE3, InstanceSize.SMALL),
@@ -92,7 +112,7 @@ namespace Ivr
                 {
                     SubnetType = SubnetType.PUBLIC
                 },
-                //UserData = UserData,
+                UserData = userData,
             });
         }
     }

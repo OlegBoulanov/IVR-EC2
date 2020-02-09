@@ -30,9 +30,15 @@ namespace Ivr
             if(string.IsNullOrWhiteSpace(rdps)) throw new ApplicationException("No RDP CIDR specified, use '-c rdps=<comma-separated_RDP_CIDRs>'");
 
             var keypair = app.Node.TryGetContext("keypair") as string;
-            if(string.IsNullOrWhiteSpace(keypair)) throw new ApplicationException("No KeyPair name specified, use '-c keypair=<name>'");
+            if(string.IsNullOrWhiteSpace(keypair)) throw new ApplicationException("No KeyPair specified, use '-c keypair=<name>'");
 
+            var username = app.Node.TryGetContext("username") as string;
+            if(string.IsNullOrWhiteSpace(username)) throw new ApplicationException("No UserName specified, use '-c username=<name>'");
+            var password = app.Node.TryGetContext("password") as string;
+            if(string.IsNullOrWhiteSpace(password)) throw new ApplicationException("No Password specified, use '-c password=<password>'");
             //throw new ApplicationException("ENOUGH");
+
+            var ingress = new Dictionary<string, int>(rdps.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(x => new KeyValuePair<string, int>(x, 3389)));
 
             var ivrStack = new IvrStack(app, "IvrStack", new IvrStackProps
             {
@@ -42,7 +48,9 @@ namespace Ivr
                     Region = region,
                 },
                 KeyName = keypair,
-                IngressRules = new Dictionary<string, int>(rdps.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(x => new KeyValuePair<string, int>(x, 3389))),
+                UserName = username,
+                UserPassword = password,
+                IngressRules = ingress,
             });
 
             // do work

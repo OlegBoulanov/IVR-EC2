@@ -4,7 +4,7 @@ using Amazon.CDK.AWS.IAM;
 
 namespace Ivr
 {
-    public static class MRoleExtensions
+    public static class RoleExtensions
     {
         public static RoleProps SetManagedPolicies(this RoleProps role, params IManagedPolicy[] policies)
         {
