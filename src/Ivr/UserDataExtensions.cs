@@ -54,7 +54,13 @@ namespace Ivr
                 data.WithCommands($"add-content {file.Key} -value \"{file.Value.Replace("\n", "`n")}\"");
             }
             return data;
-        }        
+        }
+        public static Amazon.CDK.AWS.EC2.UserData WithEc2Credentials(this Amazon.CDK.AWS.EC2.UserData data, string user, string account, string role)
+        {
+            return data.WithFiles(new Dictionary<string, string>{
+                { $"C:\\Users\\{user}\\.aws/credentials", $"[default]\ncredential_source = Ec2InstanceMetadata\nrole_arn = arn:aws:iam::{account}:role/{role}" },
+            });
+        }
         public static Amazon.CDK.AWS.EC2.UserData WithNewUser(this Amazon.CDK.AWS.EC2.UserData data, string userName, string userPassword, params string [] addToGroups)
         {
             data.AddCommands($"$Pwd = ConvertTo-SecureString \"{userPassword}\" -AsPlainText -Force");
