@@ -45,7 +45,19 @@ namespace IvrLib
             var role = new Role(this, "IvrRole", new RoleProps
             {
                 AssumedBy = new ServicePrincipal("ec2.amazonaws.com"),
+                InlinePolicies = new Dictionary<string, PolicyDocument> {
+                    { "IvrPolicy", new PolicyDocument(new PolicyDocumentProps {
+                        Statements = new PolicyStatement[] {
+                            new PolicyStatement(new PolicyStatementProps{
+                                Effect = Effect.ALLOW,
+                                Actions = new string [] { "sts:AssumeRole", "sts:GetFederationToken" },
+                                Resources = new string [] { $"arn:aws:iam::{props.Env.Account}:role/IvrRole*" },
+                            }),
+                        },
+                    })}
+                },
             });
+            
             var policy = new Policy(this, "IvrStsAssumeRole", new PolicyProps{
                 Statements = new PolicyStatement[]{
                     new PolicyStatement(new PolicyStatementProps{
