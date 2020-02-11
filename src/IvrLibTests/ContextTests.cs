@@ -1,5 +1,6 @@
 
 using System;
+using System.Runtime.InteropServices;
 using NUnit.Framework;
 
 using IvrLib;
@@ -28,6 +29,15 @@ namespace IvrLibTests
             Assert.AreEqual("ctx2-1", ctxs["one"]);
             Assert.AreEqual(string.Empty, ctxs["two"]);
             Assert.AreEqual("ctx2-3", ctxs["three"]);
+        }
+        [Test]
+        public void TestStrings()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                Assert.AreEqual("/home/olegb", OSAgnostic.Home);
+                Assert.AreEqual("olegb", OSAgnostic.User);
+            }
         }
     }
 }

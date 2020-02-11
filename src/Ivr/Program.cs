@@ -8,6 +8,8 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using IvrLib;
+
 namespace Ivr
 {
     sealed class Program
@@ -16,6 +18,7 @@ namespace Ivr
         {
 
             var app = new App();
+            var ctx = app.Node.WithJsonFiles($"{OSAgnostic.Home}/cdk.json", $"{Directory.GetCurrentDirectory()}/cdk.json");
 
             // default (public) context parameters
             var account = app.Node.TryGetContext("account") as string;

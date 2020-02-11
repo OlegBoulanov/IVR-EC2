@@ -18,19 +18,33 @@ namespace IvrLib
 {
     public static class ConstructNodeExtensions
     {
+        public static ConstructNode WithJsonFiles(this ConstructNode node, params string[] paths)
+        {
+            return node.WithJsonFiles(new List<string>(paths));
+        }
         public static ConstructNode WithJsonFiles(this ConstructNode node, IEnumerable<string> paths)
         {
             // collect extra files first
-            var context = paths.Aggregate(new Context(), (c, p) => c.WithJsonFile(p));
+            var context = paths.Aggregate(new Context(), (c, p) =>
+            {
+                try { c.WithJsonFile(p); } catch (FileNotFoundException) { }
+                return c;
+            });
             // override from existing standard context
-            foreach(var k in context.Keys)
+            foreach (var k in context.Keys)
             {
                 var v = node.TryGetContext(k)?.ToString();
-                if(!string.IsNullOrWhiteSpace(v)) context[k] = v;
+                if (!string.IsNullOrWhiteSpace(v)) context[k] = v;
             }
             // and push back to standard
-            foreach(var kv in context) node.SetContext(kv.Key, kv.Value);
+            foreach (var kv in context) node.SetContext(kv.Key, kv.Value);
             return node;
         }
-    }    
+        public static string Resolve(this ConstructNode node, string name, string envar = null, bool throwIfUndefined = true)
+        {
+            var v = node.TryGetContext(name) as string ?? System.Environment.GetEnvironmentVariable(envar ?? name);
+            if (null == v && throwIfUndefined) throw new ArgumentNullException($"Context variable '{name}' is not defined");
+            return v;
+        }
+    }
 }
