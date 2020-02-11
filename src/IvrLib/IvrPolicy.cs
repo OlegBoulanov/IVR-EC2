@@ -10,7 +10,7 @@ using Amazon.CDK.AWS.SNS;
 using Amazon.CDK.AWS.SNS.Subscriptions;
 using Amazon.CDK.AWS.SQS;
 
-namespace Ivr
+namespace IvrLib
 {
     public class IvrPolicy : ManagedPolicy
     {

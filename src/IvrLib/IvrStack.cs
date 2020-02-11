@@ -12,15 +12,15 @@ using Amazon.CDK.AWS.SNS;
 using Amazon.CDK.AWS.SNS.Subscriptions;
 using Amazon.CDK.AWS.SQS;
 
-namespace Ivr
+namespace IvrLib
 {
     public class IvrStack : Stack
     {
         public IVpc Vpc { get; protected set; }
         public Instance_ Instance { get; protected set; }
-        internal IvrStack(Construct scope, string id, IvrStackProps props = null) : base(scope, id, props)
+        public IvrStack(Construct scope, string id, IvrStackProps props = null) : base(scope, id, props)
         {
-            this.Vpc = new Ivr.Vpc(this, $"{id}_Vpc", new VpcProps
+            this.Vpc = new IvrLib.Vpc(this, $"{id}_Vpc", new VpcProps
             {
                 Cidr = "10.10.10.0/24",
                 MaxAzs = 2,
@@ -55,7 +55,7 @@ namespace Ivr
                     }),
                 }
             });
-            policy.AttachToRole(role);
+            //policy.AttachToRole(role);
             //role.AttachInlinePolicy(policy);
             //role.AddManagedPolicy(new IvrPolicy(this, $"{id}_Policy"));
 

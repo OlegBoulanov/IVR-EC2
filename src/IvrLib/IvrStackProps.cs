@@ -7,8 +7,7 @@ using System.Linq;
 
 using Amazon.CDK;
 
-
-namespace Ivr
+namespace IvrLib
 {
     public class IvrStackProps : StackProps
     {

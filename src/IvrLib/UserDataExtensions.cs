@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Globalization;
 
-namespace Ivr
+namespace IvrLib
 {
     public static class UserDataExtensions
     {

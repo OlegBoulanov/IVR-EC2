@@ -43,6 +43,7 @@ namespace Ivr
             System.Console.WriteLine($"{account}/{region}, {comment}");
 
             var rdps = app.Node.Resolve(ctx, "rdps", help: "expected as comma-separated list of IPv4 CIDRs").Split(',', StringSplitOptions.RemoveEmptyEntries);
+            rdps.Select(x => { WriteLine($"{x}"); return x; });
             var ingressEndpoints = new Dictionary<string, int>(rdps.Select(x => new KeyValuePair<string, int>(x, 3389)));
             // can add more inbound CIDR:port pairs here...
 
