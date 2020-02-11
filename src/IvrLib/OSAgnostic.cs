@@ -14,7 +14,7 @@ namespace IvrLib
 
         public static string Home
         {
-            get => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? $"{Environment.GetEnvironmentVariable("HOMEDRIVE")}{Path.DirectorySeparatorChar}{Environment.GetEnvironmentVariable("HOMEPATH")}"
+            get => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? Environment.GetEnvironmentVariable("USERPROFILE")  // not HOME, which may point to smth like U:\\
                 : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? Environment.GetEnvironmentVariable("HOME") 
                 : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? Environment.GetEnvironmentVariable("HOME") 
                 : null;

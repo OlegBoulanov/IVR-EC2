@@ -33,7 +33,12 @@ namespace IvrLibTests
         [Test]
         public void TestStrings()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Assert.AreEqual(Environment.GetEnvironmentVariable("USERPROFILE"), OSAgnostic.Home);
+                Assert.AreEqual(Environment.GetEnvironmentVariable("USERNAME"), OSAgnostic.User);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 Assert.AreEqual("/home/olegb", OSAgnostic.Home);
                 Assert.AreEqual("olegb", OSAgnostic.User);
