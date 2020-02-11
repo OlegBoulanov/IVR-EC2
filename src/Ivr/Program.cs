@@ -18,46 +18,48 @@ namespace Ivr
         {
 
             var app = new App();
-            var ctx = app.Node.WithJsonFiles($"{OSAgnostic.Home}/cdk.json", $"{Directory.GetCurrentDirectory()}/cdk.json");
 
-            // default (public) context parameters
-            var account = app.Node.TryGetContext("account") as string;
-            if(string.IsNullOrWhiteSpace(account)) account = System.Environment.GetEnvironmentVariable("CDK_DEFAULT_ACCOUNT");
+            // Configuration values resolution
+            // Environment (defaults)
+            //  - account
+            //  - region
+            //  - keypair
+            // ~/cdk.json [private zone]
+            //  - RDP address(es)
+            //  - RDP user name
+            //  - RDP user password
+            //  - keypair
+            // .../cdk[-flavor].json [project/public zone]
+            //      - overrides
+            // finally, [private] command line -c name=value overrides for specific synth/deployments
+            //  these sets of values can also come in files: -c ctx=file
 
-            var region = app.Node.TryGetContext("region") as string;
-            if(string.IsNullOrWhiteSpace(region)) region = System.Environment.GetEnvironmentVariable("CDK_DEFAULT_REGION");
-            System.Console.WriteLine($"Account/region: {account}/{region}");
+            // can't rely on (incorrect) CDK implementation, so read these files one by one, values from previous may be overridden by those from next
+            var ctx = Context.FromJsonFiles($"{OSAgnostic.Home}/cdk.json", $"cdk.json", app.Node.TryGetContext("ctx") as string);
 
-            // mandatory (proprietary) context parameters
-            var rdps = app.Node.TryGetContext("rdps") as string;
-            if(string.IsNullOrWhiteSpace(rdps)) throw new ApplicationException("No RDP CIDR specified, use '-c rdps=<comma-separated_RDP_CIDRs>'");
+            var account = app.Node.Resolve(ctx, "account", "CDK_DEFAULT_ACCOUNT");
+            var region = app.Node.Resolve(ctx, "region", "CDK_DEFAULT_REGION");
+            var comment = app.Node.Resolve(ctx, "comment", throwIfUndefined: false) ?? "no comments";
+            System.Console.WriteLine($"{account}/{region}, {comment}");
 
-            var keypair = app.Node.TryGetContext("keypair") as string;
-            if(string.IsNullOrWhiteSpace(keypair)) throw new ApplicationException("No KeyPair specified, use '-c keypair=<name>'");
+            var rdps = app.Node.Resolve(ctx, "rdps", help: "expected as comma-separated list of IPv4 CIDRs").Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var ingressEndpoints = new Dictionary<string, int>(rdps.Select(x => new KeyValuePair<string, int>(x, 3389)));
+            // can add more inbound CIDR:port pairs here...
 
-            var username = app.Node.TryGetContext("username") as string;
-            if(string.IsNullOrWhiteSpace(username)) throw new ApplicationException("No UserName specified, use '-c username=<name>'");
-            var password = app.Node.TryGetContext("password") as string;
-            if(string.IsNullOrWhiteSpace(password)) throw new ApplicationException("No Password specified, use '-c password=<password>'");
-            //throw new ApplicationException("ENOUGH");
-
-            var ingress = new Dictionary<string, int>(rdps.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(x => new KeyValuePair<string, int>(x, 3389)));
-
-            var ivrStack = new IvrStack(app, "IvrStack", new IvrStackProps
+            var ivrStackProps = new IvrStackProps
             {
                 Env = new Amazon.CDK.Environment
                 {
                     Account = account,
                     Region = region,
                 },
-                KeyName = keypair,
-                UserName = username,
-                UserPassword = password,
-                IngressRules = ingress,
-            });
+                KeyName = app.Node.Resolve(ctx, "keyname"),
+                UserName = app.Node.Resolve(ctx, "username"),
+                UserPassword = app.Node.Resolve(ctx, "password"),
+                IngressRules = ingressEndpoints,
+            };
 
-
-            // do work
+            new IvrStack(app, "IvrStack", ivrStackProps);
             app.Synth();
         }
     }

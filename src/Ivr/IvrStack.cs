@@ -67,7 +67,7 @@ namespace Ivr
             // add IB RDP 
             foreach(var rule in props.IngressRules)
             {
-                securityGroup.AddIngressRule(Peer.Ipv4(rule.Key), Port.Tcp(rule.Value), $"Inbound: {rule.Key}:{rule.Value}");    
+                securityGroup.AddIngressRule(Peer.Ipv4(rule.Key), Port.Tcp(rule.Value), $"Ingress: {rule.Key}:{rule.Value}");    
             }
 
 //            var eip = new CfnEIP(this, "IvrEIP", new CfnEIPProps

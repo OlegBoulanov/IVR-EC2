@@ -1,6 +1,6 @@
 {
   "app": "dotnet run -p src/Ivr/Ivr.csproj",
   "context": {
-    "regionx": "us-west-2(./cdk.json)"
+    "comment": "./cdk.json"
   }
 }

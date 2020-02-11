@@ -30,5 +30,17 @@ namespace IvrLib
         {
             return WithJson(new StreamReader(path).ReadToEnd(), selector);
         }
+        public static Context FromJsonFiles(params string [] paths)
+        {
+            return  paths.Aggregate(new Context(), (c, p) =>
+            {
+                if(!string.IsNullOrWhiteSpace(p))
+                {
+                    if(!Path.HasExtension(p)) p = Path.ChangeExtension(p, ".json");
+                    if(File.Exists(p)) c.WithJsonFile(p);
+                }
+                return c;
+            });
+        }
     }
 }
