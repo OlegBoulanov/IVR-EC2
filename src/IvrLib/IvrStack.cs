@@ -50,27 +50,14 @@ namespace IvrLib
                         Statements = new PolicyStatement[] {
                             new PolicyStatement(new PolicyStatementProps{
                                 Effect = Effect.ALLOW,
-                                Actions = new string [] { "sts:AssumeRole", "sts:GetFederationToken" },
-                                Resources = new string [] { $"arn:aws:iam::{props.Env.Account}:role/IvrRole*" },
+                                Actions = new string [] { "sts:AssumeRole" },
+                                Resources = new string [] { $"arn:aws:iam::{props.Env.Account}:role/IvrStack*" },
                             }),
                         },
                     })}
                 },
             });
             
-            var policy = new Policy(this, "IvrStsAssumeRole", new PolicyProps{
-                Statements = new PolicyStatement[]{
-                    new PolicyStatement(new PolicyStatementProps{
-                        Effect = Effect.ALLOW,
-                        Actions = new string [] { "sts:AssumeRole", "sts:GetFederationToken" },
-                        Resources = new string [] { $"arn:aws:iam:{props.Env.Account}:role/{role.RoleName}" },
-                    }),
-                }
-            });
-            //policy.AttachToRole(role);
-            //role.AttachInlinePolicy(policy);
-            //role.AddManagedPolicy(new IvrPolicy(this, $"{id}_Policy"));
-
             var securityGroup = new SecurityGroup(this, $"{id}_SG", new SecurityGroupProps
             {
                 Vpc = Vpc,
@@ -97,10 +84,12 @@ namespace IvrLib
                 .WithDownloadAndInstall(
                     "https://aka.ms/vs/16/release/vc_redist.x86.exe",
                     "https://download.visualstudio.microsoft.com/download/pr/d12cc6fa-8717-4424-9cbf-d67ae2fb2575/b4fff475e67917918aa2814d6f673685/dotnet-runtime-3.0.1-win-x64.exe",
+                    "https://awscli.amazonaws.com/AWSCLIV2.msi",
                     "https://github.com/OlegBoulanov/s3i/releases/download/v1.0.315/s3i.msi"
                 )
                 .WithEnvironmentVariables(new Dictionary<string, string>{
-                    {"s3i_args", "\"https://github.com/OlegBoulanov/s3i/blob/develop/Examples/Config.ini --verbose\"" },
+                    {"s3i_args", "\"https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini --verbose\"" },
+                    // 1625 forbidden by system policy
                 })
                 .WithEc2Credentials(props.UserName, props.Env.Account, role.RoleName)
                 .WithEc2Credentials("OtherUser", props.Env.Account, role.RoleName)

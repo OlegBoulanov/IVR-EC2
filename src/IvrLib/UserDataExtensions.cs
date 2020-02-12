@@ -43,7 +43,7 @@ namespace IvrLib
         }
         public static Amazon.CDK.AWS.EC2.UserData WithEnvironmentVariables(this Amazon.CDK.AWS.EC2.UserData data, params IDictionary<string, string>[] vars)
         {
-            foreach(var var in vars) foreach(var kv in var) data.WithCommands($"setx /m {kv.Key} {kv.Value}");
+            foreach(var var in vars) foreach(var kv in var) data.WithCommands($"setx /m {kv.Key} {kv.Value} | Out-Null");
             return data;
         }
         public static Amazon.CDK.AWS.EC2.UserData WithFiles(this Amazon.CDK.AWS.EC2.UserData data, params IDictionary<string, string>[] allfiles)
