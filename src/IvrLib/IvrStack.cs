@@ -89,12 +89,14 @@ namespace IvrLib
                 )
                 .WithEnvironmentVariables(new Dictionary<string, string>{
                     {"s3i_args", "\"https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini --verbose\"" },
-                    // 1625 forbidden by system policy
                 })
                 .WithEc2Credentials(props.UserName, props.Env.Account, role.RoleName)
                 .WithEc2Credentials("OtherUser", props.Env.Account, role.RoleName)
-                .WithCommands("s3i");
+                .WithDisableUAC(restartComputer: false)
+                // more before restarting?
+                .WithRestart();
                 /*
+                ...reboot to complete fixing UAC, and s3i will kick in at restart...
                 */
             this.Instance = new Instance_(this, $"{id}_Instance", new InstanceProps
             {
@@ -115,7 +117,7 @@ namespace IvrLib
                     },
                 },
                 
-                KeyName = props.KeyName,
+                //KeyName = props.KeyName,
                 Role = role,
                 SecurityGroup = securityGroup,
                 VpcSubnets = new SubnetSelection

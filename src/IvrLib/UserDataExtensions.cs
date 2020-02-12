@@ -57,6 +57,7 @@ namespace IvrLib
         }
         public static Amazon.CDK.AWS.EC2.UserData WithEc2Credentials(this Amazon.CDK.AWS.EC2.UserData data, string user, string account, string role)
         {
+            // https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-metadata.html
             return data.WithFiles(new Dictionary<string, string>{
                 { $"C:\\Users\\{user}\\.aws/credentials", $"[default]\ncredential_source = Ec2InstanceMetadata\nrole_arn = arn:aws:iam::{account}:role/{role}" },
             });
@@ -77,6 +78,21 @@ namespace IvrLib
             data.AddCommands($"New-Item -ItemType Directory -Force -Path \"$NewFolderPath\"");
             data.AddCommands($"Set-Location \"$NewFolderPath\"");
             return data;
+        }
+        public static Amazon.CDK.AWS.EC2.UserData WithDisableUAC(this Amazon.CDK.AWS.EC2.UserData data, bool restartComputer = false)
+        {
+            // https://support.gfi.com/hc/en-us/articles/360012968753-Disabling-the-User-Account-Control-UAC-
+            data.AddCommands($"New-ItemProperty -Path HKLM:Software\\Microsoft\\Windows\\CurrentVersion\\policies\\system -Name EnableLUA -PropertyType DWord -Value 0 -Force | Out-Null");
+            if(restartComputer) { 
+                data.WithRestart(); 
+                return null;    // break the chain, triggering runtime error if misused
+            }
+            return data;
+        }        
+        public static void WithRestart(this Amazon.CDK.AWS.EC2.UserData data)
+        {
+            data.AddCommands("Restart-Computer");
+            // no return, so compiler would complain if misused
         }
     }
 }

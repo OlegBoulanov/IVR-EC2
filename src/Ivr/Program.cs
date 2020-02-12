@@ -54,7 +54,7 @@ namespace Ivr
                     Account = account,
                     Region = region,
                 },
-                KeyName = app.Node.Resolve(ctx, "keyname"),
+                //KeyName = app.Node.Resolve(ctx, "keyname"),
                 UserName = app.Node.Resolve(ctx, "username"),
                 UserPassword = app.Node.Resolve(ctx, "password"),
                 IngressRules = ingressEndpoints,
