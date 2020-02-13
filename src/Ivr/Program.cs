@@ -42,9 +42,13 @@ namespace Ivr
             var comment = app.Node.Resolve(ctx, "comment", throwIfUndefined: false) ?? "no comments";
             System.Console.WriteLine($"{account}/{region}, {comment}");
 
-            var rdps = app.Node.Resolve(ctx, "rdps", help: "expected as comma-separated list of IPv4 CIDRs").Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var rdps = app.Node.Resolve(ctx, "rdps", help: "expected as comma-separated list of IPv4 CIDRs")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries);
             var ingressEndpoints = new Dictionary<string, int>(rdps.Select(x => new KeyValuePair<string, int>(x.Trim(), 3389)));
             // can add more inbound CIDR:port pairs here...
+            var ec2users = app.Node.Resolve(ctx, "ec2users", help: "expected comma-separated list of users to prime with AWS EC2 Role credentials", throwIfUndefined: false)
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(u => u.Trim());
 
             var ivrStackProps = new IvrStackProps
             {
@@ -57,6 +61,8 @@ namespace Ivr
                 UserName = app.Node.Resolve(ctx, "username"),
                 UserPassword = app.Node.Resolve(ctx, "password"),
                 IngressRules = ingressEndpoints,
+                EC2Users = ec2users,
+                s3i_args = app.Node.Resolve(ctx, "s3i_args"),
             };
 
             new IvrStack(app, "IvrStack", ivrStackProps);

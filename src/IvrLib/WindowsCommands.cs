@@ -22,14 +22,14 @@ namespace IvrLib
         {
             if(!string.IsNullOrWhiteSpace(LogFilePath))
             {
-                //WriteLine($"{DateTime.Now:HH:mm:ss.fff}: {s}");
                 UserData.AddCommands($"Add-Content -Path \"{LogFilePath}\" -Force -Value \"$(Get-Date -Format \"HH:mm:ss.fff\"): {s.Replace("\n", "`n").Replace("\"", "`\"")}\"");
             }
             return this;
         }
         public WindowsCommands WithCommands(string commands)
         {
-            Log($"Command(s): {commands}");
+            Log($"PS> {commands}");
+            Console.WriteLine($"PS> {commands.Replace("\n", " \\n ")}");
             UserData.AddCommands($"{commands}");
             return this;
         }
@@ -79,7 +79,7 @@ namespace IvrLib
         {
             // https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-metahtml
             var userprofile = string.IsNullOrWhiteSpace(user) ? "C:\\Windows\\System32\\config\\systemprofile" : $"C:\\Users\\{user}";
-            Log($"Set EC2 creds for {user}, {account}/{role} => {userprofile}");
+            Log($"Set EC2 creds for {user ?? "SYSTEM"}, {account}/{role} => {userprofile}");
             return WithFile($"{userprofile}\\.aws\\credentials", $"[default]\ncredential_source = Ec2InstanceMetadata\nrole_arn = arn:aws:iam::{account}:role/{role}");
         }
         public WindowsCommands WithNewUser(string userName, string userPassword, params string [] addToGroups)

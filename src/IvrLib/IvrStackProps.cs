@@ -14,7 +14,9 @@ namespace IvrLib
         //public string KeyName { get; set; }
         public string UserName { get; set; }
         public string UserPassword { get; set; }
-        public string[] UserGroups { get; set; } = new string[] { "Administrators", "Remote Desktop Users" };
-        public Dictionary<string, int> IngressRules { get; set; }
+        public IEnumerable<string> UserGroups { get; set; } = new List<string> { "Administrators", "Remote Desktop Users" };
+        public IDictionary<string, int> IngressRules { get; set; }
+        public IEnumerable<string> EC2Users { get; set; }
+        public string s3i_args { get; set; }    // = "https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini --verbose";
     }
 }
