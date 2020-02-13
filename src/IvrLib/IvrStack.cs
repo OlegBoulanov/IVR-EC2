@@ -67,37 +67,47 @@ namespace IvrLib
                 securityGroup.AddIngressRule(Peer.Ipv4(rule.Key), Port.Tcp(rule.Value), $"Ingress: {rule.Key}:{rule.Value}");    
             }
 
-//            var eip = new CfnEIP(this, "IvrEIP", new CfnEIPProps
-//            {
-//            });
-//            WriteLine($"EIP: {eip.LogicalId}");
+            //var eip = new CfnEIP(this, "IvrEIP", new CfnEIPProps            {            });            WriteLine($"EIP: {eip.LogicalId}");
 
-            var workFolder = $"C:\\ProgramData\\{id}\\";
+            var workFolder = $"C:\\ProgramData\\{id}";
             var commandsToRun = new WindowsCommands();
             commandsToRun
-                .WithNewUser(props.UserName, props.UserPassword, props.UserGroups)
+                // working folder and log file
                 .WithNewFolder(workFolder)
                 .WithLogFile($"{workFolder}\\{id}.log")
                 .Log($"User profile: $env:userprofile")    // C:\Users\Administrator
+                // RDP user
+                .WithNewUser(props.UserName, props.UserPassword, props.UserGroups)
+                // more AWS-enabled users
+                .WithFile($"{workFolder}\\afterRDP.log","got here")
+                .Log($"Got after RDP user, let's set AWS creds")
+                .WithEc2Credentials(props.UserName, props.Env.Account, role.RoleName)
+                .Log($"set {props.UserName}")
+                .WithEc2Credentials("OtherUser", props.Env.Account, role.RoleName)
+                .Log($"set OtherUser")
+                .WithEc2Credentials(null, props.Env.Account, role.RoleName) // system
+                .Log($"set system")
+                /*
                 .WithDownloadAndInstall(
                     "https://aka.ms/vs/16/release/vc_redist.x86.exe",
                     "https://download.visualstudio.microsoft.com/download/pr/d12cc6fa-8717-4424-9cbf-d67ae2fb2575/b4fff475e67917918aa2814d6f673685/dotnet-runtime-3.0.1-win-x64.exe",
                     "https://awscli.amazonaws.com/AWSCLIV2.msi",
                     "https://github.com/OlegBoulanov/s3i/releases/download/v1.0.315/s3i.msi"
                 )
+                /*
                 .WithEnvironmentVariable("s3i_args", $"\"https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini --stage {workFolder} --verbose\"")
-                .WithEc2Credentials(props.UserName, props.Env.Account, role.RoleName)
-                .WithEc2Credentials("OtherUser", props.Env.Account, role.RoleName)
                 .WithDisableUAC(restartComputer: false)
                 // more before restarting?
                 .WithRestart();
+                */
+                ;
                 /*
                 ...reboot to complete fixing UAC, and s3i will kick in at restart...
                 */
 
             this.Instance = new Instance_(this, $"CallHost", new InstanceProps
             {
-                InstanceType = InstanceType.Of(InstanceClass.BURSTABLE3, InstanceSize.SMALL),
+                InstanceType = InstanceType.Of(InstanceClass.BURSTABLE3, InstanceSize.LARGE),
                 
                 MachineImage = amiImage,
                 Vpc = Vpc,

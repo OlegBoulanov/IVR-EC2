@@ -16,7 +16,6 @@ namespace IvrLib
         public WindowsCommands WithLogFile(string logFilePath)
         {
             LogFilePath = logFilePath;
-            if(!string.IsNullOrWhiteSpace(LogFilePath)) WithCommands($"new-item -force {LogFilePath}");
             return this;
         }
         public WindowsCommands Log(string s)
@@ -24,21 +23,20 @@ namespace IvrLib
             if(!string.IsNullOrWhiteSpace(LogFilePath))
             {
                 //WriteLine($"{DateTime.Now:HH:mm:ss.fff}: {s}");
-                UserData.AddCommands($"Add-Content {LogFilePath} -value \"$(Get-Date -Format \"HH:mm:ss.fff\"): {s.Replace("\n", "`n")}\"");
+                UserData.AddCommands($"Add-Content -Path \"{LogFilePath}\" -Force -Value \"$(Get-Date -Format \"HH:mm:ss.fff\"): {s.Replace("\n", "`n").Replace("\"", "`\"")}\"");
             }
             return this;
         }
-        public WindowsCommands WithCommands(string commands, bool logOutput = true)
+        public WindowsCommands WithCommands(string commands)
         {
             Log($"Command(s): {commands}");
-            //UserData.AddCommands($"{commands}{(logOutput && string.IsNullOrWhiteSpace(LogFilePath) ? "" : " | Add-Content {LogFilePath}")}");
             UserData.AddCommands($"{commands}");
             return this;
         }
         public WindowsCommands WithDownload(string path, string outfile = null)
         {
             if(string.IsNullOrWhiteSpace(outfile)) outfile = Path.GetFileName(path);
-            return WithCommands($"WGet {path} -Outfile {outfile}", logOutput: false);
+            return WithCommands($"wget \"{path}\" -Outfile \"{outfile}\"");
         }        
         public WindowsCommands WithInstall(string path)
         {
@@ -61,23 +59,28 @@ namespace IvrLib
         }
         public WindowsCommands WithEnvironmentVariable(string name, string value)
         {
-            return WithCommands($"Setx /m {name} \"{value}\" | Out-Null");
+            return WithCommands($"Setx /m {name} \"{value}\"");
         }
+        public WindowsCommands WithFile(string name, string content)
+        {
+            WithCommands($"New-Item -Force -Path \"{name}\"");
+            return WithCommands($"Add-Content -Path \"{name}\" -Force -Value \"{content.Replace("\n", "`n")}\"");
+        }        
         public WindowsCommands WithFiles(params IDictionary<string, string>[] allfiles)
         {
             foreach(var files in allfiles) foreach(var file in files)
             {
-                WithCommands($"New-Item -Force {file.Key}");
-                WithCommands($"Add-Content {file.Key} -Value \"{file.Value.Replace("\n", "`n")}\"");
+                WithCommands($"New-Item -Force -Path \"{file.Key}\"");
+                WithCommands($"Add-Content -Path \"{file.Key}\" -Value \"{file.Value.Replace("\n", "`n")}\"");
             }
             return this;
         }
         public WindowsCommands WithEc2Credentials(string user, string account, string role)
         {
             // https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-metahtml
-            return WithFiles(new Dictionary<string, string>{
-                { $"C:\\Users\\{user}\\.aws/credentials", $"[default]\ncredential_source = Ec2InstanceMetadata\nrole_arn = arn:aws:iam::{account}:role/{role}" },
-            });
+            var userprofile = string.IsNullOrWhiteSpace(user) ? "C:\\Windows\\System32\\config\\systemprofile" : $"C:\\Users\\{user}";
+            Log($"Set EC2 creds for {user}, {account}/{role} => {userprofile}");
+            return WithFile($"{userprofile}\\.aws\\credentials", $"[default]\ncredential_source = Ec2InstanceMetadata\nrole_arn = arn:aws:iam::{account}:role/{role}");
         }
         public WindowsCommands WithNewUser(string userName, string userPassword, params string [] addToGroups)
         {
@@ -91,15 +94,14 @@ namespace IvrLib
         }
         public WindowsCommands WithNewFolder(string newFolderPath, bool setLocation = true)
         {
-            WithCommands($"$NewFolderPath=\"{newFolderPath}\"");
-            WithCommands($"New-Item -ItemType Directory -Force -Path \"$NewFolderPath\"");
-            if(setLocation) WithCommands($"Set-Location \"$NewFolderPath\"");
+            WithCommands($"New-Item -ItemType Directory -Force -Path \"{newFolderPath}\"");
+            if(setLocation) WithCommands($"Set-Location \"{newFolderPath}\"");
             return this;
         }
         public WindowsCommands WithDisableUAC(bool restartComputer = false)
         {
             // https://support.gfi.com/hc/en-us/articles/360012968753-Disabling-the-User-Account-Control-UAC-
-            WithCommands($"New-ItemProperty -Path HKLM:Software\\Microsoft\\Windows\\CurrentVersion\\policies\\system -Name EnableLUA -PropertyType DWord -Value 0 -Force | Out-Null");
+            WithCommands($"New-ItemProperty -Path HKLM:Software\\Microsoft\\Windows\\CurrentVersion\\policies\\system -Name EnableLUA -PropertyType DWord -Value 0 -Force");
             if(restartComputer) { 
                 WithRestart(); 
                 return null;    // break the chain, triggering runtime error if misused
