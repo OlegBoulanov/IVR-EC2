@@ -31,9 +31,9 @@ namespace IvrLib
         }
         public static PolicyStatement WithResources(this PolicyStatement statement, params string[] resources)
         {
-            statement.AddResources(resources);
+            statement.AddResources(0 < resources.Length ? resources : new string[] { "*" });
             return statement;
-        }    
+        }
         public static PolicyStatement WithNotResources(this PolicyStatement statement, params string[] resources)
         {
             statement.AddNotResources(resources);

@@ -20,6 +20,7 @@ namespace IvrLib
         public Instance_ Instance { get; protected set; }
         public IvrStack(Construct scope, string id, IvrStackProps props = null) : base(scope, id, props)
         {
+            // We'll start with brand new VPC
             this.Vpc = new IvrLib.Vpc(this, $"Public", new VpcProps
             {
                 Cidr = "10.10.10.0/24",
@@ -33,35 +34,39 @@ namespace IvrLib
                 }
             });
 
-            //var publicSubnets = Vpc.PublicSubnets;
-            //WriteLine($"{publicSubnets.Aggregate($"{nameof(IvrStack)}.PublicSubnets[{publicSubnets.Length}]:", (a, subnet) => { return $"{a}{System.Environment.NewLine}  {subnet.SubnetId}/{subnet.AvailabilityZone} => {subnet.RouteTable.RouteTableId}"; })}");
-
-            var amiImage = new WindowsImage(WindowsVersion.WINDOWS_SERVER_2019_ENGLISH_FULL_BASE);
-            var amiImageConfig = amiImage.GetImage(this);
-            //WriteLine($"Win: {amiImageConfig.OsType}/{amiImageConfig.ImageId}");
-
+            // Role is needed for allowing tools to use EC2 provided credentials
+            // see https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-role.html
             var role = new Role(this, "Role_CallHost", new RoleProps
             {
                 AssumedBy = new ServicePrincipal("ec2.amazonaws.com"),
                 InlinePolicies = new Dictionary<string, PolicyDocument> {
                     { "IvrPolicy", new PolicyDocument(new PolicyDocumentProps {
                         Statements = new PolicyStatement[] {
-                            new PolicyStatement(new PolicyStatementProps{
-                                Effect = Effect.ALLOW,
-                                Actions = new string [] { "sts:AssumeRole" },
-                                Resources = new string [] { $"arn:aws:iam::{props.Env.Account}:role/IvrStack*" },
-                            }),
-                        },
+                            new PolicyStatement().Allow().WithActions("sts:AssumeRole")
+                                .WithResources($"arn:aws:iam::{props.Env.Account}:role/IvrStack*"), 
+                            new PolicyStatement().Allow().WithActions("s3:GetBucketLocation")
+                                .WithResources(),
+                            new PolicyStatement().Allow().WithActions("s3:ListBucket")
+                                .WithResources(props.S3BucketResources("apps", "config", "install", "prompts", "prompts.update", "tools", "userjobs")),
+                            new PolicyStatement().Allow().WithActions("s3:GetObject")
+                                .WithResources(props.S3ObjectResources("apps", "config", "install", "logs", "prompts", "prompts.update", "sessions", "segments", "tools", "userjobs")),
+                            new PolicyStatement().Allow().WithActions("s3:PutObject")
+                                .WithResources(props.S3ObjectResources("logs", "sessions", "segments", "tools")),
+                            new PolicyStatement().Allow().WithActions("s3:DeleteObject")
+                                .WithResources(props.S3ObjectResources("userjobs")),
+                            new PolicyStatement().Allow().WithActions("sns:Publish")
+                                .WithResources(),
+                          },
                     })}
                 },
             });
             
-            var securityGroup = new SecurityGroup(this, $"InboundRDP", new SecurityGroupProps
+            // Configure inbound security for RDP (and more?)
+            var securityGroup = new SecurityGroup(this, $"Ingress", new SecurityGroupProps
             {
                 Vpc = Vpc,
                 AllowAllOutbound = true,
             });
-            // add IB RDP 
             foreach(var rule in props.IngressRules)
             {
                 securityGroup.AddIngressRule(Peer.Ipv4(rule.Key), Port.Tcp(rule.Value), $"Ingress: {rule.Key}:{rule.Value}");    
@@ -69,52 +74,53 @@ namespace IvrLib
 
             //var eip = new CfnEIP(this, "IvrEIP", new CfnEIPProps            {            });            WriteLine($"EIP: {eip.LogicalId}");
 
+            // Now is time to assemble PowerShell command to execute at first start
             var workingFolder = $"C:\\ProgramData\\{id}";
             var commandsToRun = new WindowsCommands()
                 // working folder and log file
                 .WithNewFolder(workingFolder, setLocation: true)
-                .WithLogFile($"{workingFolder}\\{id}.log").Log($"User profile: $env:userprofile")    // C:\Users\Administrator
-                // RDP user
-                .WithNewUser(props.UserName, props.UserPassword, props.UserGroups.ToArray());
+                .WithLogFile($"{workingFolder}\\{id}.log").Log($"User profile: $env:userprofile");    // C:\Users\Administrator
 
+            // Create RDP user first
+            if(!string.IsNullOrWhiteSpace(props.RdpUserName)) {
+                commandsToRun 
+                    .WithNewUser(props.RdpUserName, props.RdpUserPassword, props.UserGroups.ToArray());
+            }
+
+            // AWS-enable certain users
             commandsToRun
-                // more AWS-enabled users
                 .WithEc2Credentials("$Env:USERNAME", props.Env.Account, role.RoleName)  // current user (Administrator)
-                .WithEc2Credentials(props.UserName, props.Env.Account, role.RoleName)   // RDP user
-                .WithEc2Credentials(null, props.Env.Account, role.RoleName);            // system
-
+                .WithEc2Credentials(null, props.Env.Account, role.RoleName);            // system, as s3i service account
+            // ...and enable more
             props.EC2Users?.ToList().ForEach(user => {
                 commandsToRun.WithEc2Credentials(user, props.Env.Account, role.RoleName);
             });
 
+            // Download and install bare minimum: VC runtime, .NET Core, AWS CLI, ...
             commandsToRun
                 .WithDownloadAndInstall($"https://aka.ms/vs/16/release/vc_redist.x86.exe /s",
                     $"https://download.visualstudio.microsoft.com/download/pr/9f010da2-d510-4271-8dcc-ad92b8b9b767/d2dd394046c20e0563ce5c45c356653f/dotnet-runtime-3.1.0-win-x64.exe /s",
                     $"https://awscli.amazonaws.com/AWSCLIV2.msi /quiet"
                 );
 
+            // If requested, install and run s3i to install the rest indirectly from specific remote configuration
             if(!string.IsNullOrWhiteSpace(props.s3i_args)) {
                 commandsToRun
                     .WithDownloadAndInstall($"https://github.com/OlegBoulanov/s3i/releases/download/v1.0.325/s3i.msi /quiet")
                     .WithEnvironmentVariable("s3i_args", $" --stage {workingFolder}\\s3i {props.s3i_args}")
-                    .WithCommands("Restart-Service -Name s3i -Force");
+                    .WithCommands("Restart-Service -Name s3i -Force");  // install products frome the line above
             }
-
 /*
             commandsToRun
                 .WithDisableUAC(restartComputer: false)
                 // more before restarting?
-                .WithRestart();
-                
-                /*
-                ...reboot to complete fixing UAC, and s3i will kick in at restart...
-                */
-
+                .WithRestart(); // ...reboot to complete fixing UAC, and s3i will kick in at restart...
+*/                
+            // Finally - create our instance!
             this.Instance = new Instance_(this, $"CallHost", new InstanceProps
             {
                 InstanceType = InstanceType.Of(InstanceClass.BURSTABLE3, InstanceSize.LARGE),
-                
-                MachineImage = amiImage,
+                MachineImage = new WindowsImage(WindowsVersion.WINDOWS_SERVER_2019_ENGLISH_FULL_BASE),
                 Vpc = Vpc,
                 BlockDevices = new BlockDevice[] {
                     new BlockDevice {
@@ -124,8 +130,7 @@ namespace IvrLib
                             Encrypted = true,
                         }),
                     },
-                },
-                
+                },               
                 //KeyName = props.KeyName,
                 Role = role,
                 SecurityGroup = securityGroup,

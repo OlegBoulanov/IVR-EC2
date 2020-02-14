@@ -42,11 +42,11 @@ namespace Ivr
             var comment = app.Node.Resolve(ctx, "comment") ?? "no comments";
             System.Console.WriteLine($"{account}/{region}, {comment}");
 
-            var rdps = app.Node.Resolve(ctx, "rdps", help: "expected as comma-separated list of IPv4 CIDRs")
+            var rdps = app.Node.Resolve(ctx, "RDPs", help: "expected as comma-separated list of IPv4 CIDRs")
                 ?.Split(',', StringSplitOptions.RemoveEmptyEntries);
             var ingressEndpoints = new Dictionary<string, int>(rdps.Select(x => new KeyValuePair<string, int>(x.Trim(), 3389)));
             // can add more inbound CIDR:port pairs here...
-            var ec2users = app.Node.Resolve(ctx, "ec2users")
+            var ec2users = app.Node.Resolve(ctx, "Ec2users")
                 ?.Split(',', StringSplitOptions.RemoveEmptyEntries)
                 ?.Select(u => u.Trim());
 
@@ -57,10 +57,11 @@ namespace Ivr
                     Account = account,
                     Region = region,
                 },
-                //KeyName = app.Node.Resolve(ctx, "keyname"),
-                UserName = app.Node.Resolve(ctx, "username"),
-                UserPassword = app.Node.Resolve(ctx, "password"),
                 IngressRules = ingressEndpoints,
+                //KeyName = app.Node.Resolve(ctx, "keyname"),
+                RdpUserName = app.Node.Resolve(ctx, "RdpUserName"),
+                RdpUserPassword = app.Node.Resolve(ctx, "RdpUserPassword"),
+                BucketsDomain = app.Node.Resolve(ctx, "BucketsDomain"),
                 EC2Users = ec2users,
                 s3i_args = app.Node.Resolve(ctx, "s3i_args"),
             };
