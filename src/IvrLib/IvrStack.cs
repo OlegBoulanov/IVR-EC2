@@ -70,7 +70,8 @@ namespace IvrLib
             //var eip = new CfnEIP(this, "IvrEIP", new CfnEIPProps            {            });            WriteLine($"EIP: {eip.LogicalId}");
 
             var workingFolder = $"C:\\ProgramData\\{id}";
-            var commandsToRun = new WindowsCommands();
+            var commandsToRun = new WindowsCommands()
+                .WithWorkingFolder(workingFolder);
 
             commandsToRun
                 // working folder and log file
@@ -84,24 +85,24 @@ namespace IvrLib
                 .WithEc2Credentials(props.UserName, props.Env.Account, role.RoleName)
                 .WithEc2Credentials(null, props.Env.Account, role.RoleName); // system
 
-            props.EC2Users.ToList().ForEach(user => {
+            props.EC2Users?.ToList().ForEach(user => {
                 //WriteLine($"EC2User: {user}");
                 commandsToRun.WithEc2Credentials(user, props.Env.Account, role.RoleName);
             });
 
-            commandsToRun
-                .WithDownloadAndInstall(
-                    "https://aka.ms/vs/16/release/vc_redist.x86.exe",
-                    "https://download.visualstudio.microsoft.com/download/pr/9f010da2-d510-4271-8dcc-ad92b8b9b767/d2dd394046c20e0563ce5c45c356653f/dotnet-runtime-3.1.0-win-x64.exe",
-                    "https://awscli.amazonaws.com/AWSCLIV2.msi",
-                    "https://github.com/OlegBoulanov/s3i/releases/download/v1.0.322/s3i.msi"
-                );
-                
             if(!string.IsNullOrWhiteSpace(props.s3i_args)) {
                 //WriteLine($"s3i_args: {props.s3i_args}");
-                commandsToRun.WithEnvironmentVariable("s3i_args", $"{props.s3i_args} --stage {workingFolder}");
+                commandsToRun.WithEnvironmentVariable("s3i_args", $"{props.s3i_args} --stage {workingFolder}\\s3i\\");
             }
 
+            commandsToRun
+                .WithDownloadAndInstall("https://aka.ms/vs/16/release/vc_redist.x86.exe /s"
+                    , "https://download.visualstudio.microsoft.com/download/pr/9f010da2-d510-4271-8dcc-ad92b8b9b767/d2dd394046c20e0563ce5c45c356653f/dotnet-runtime-3.1.0-win-x64.exe /s"
+                    , "https://awscli.amazonaws.com/AWSCLIV2.msi /quiet"
+                    //, "https://github.com/OlegBoulanov/s3i/releases/download/v1.0.322/s3i.msi /quiet"
+                );
+                
+                /*
             commandsToRun
                 .WithDisableUAC(restartComputer: false)
                 // more before restarting?

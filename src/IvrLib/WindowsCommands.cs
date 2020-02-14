@@ -12,7 +12,13 @@ namespace IvrLib
     public class WindowsCommands
     {
         public UserData UserData { get; protected set; } = UserData.ForWindows();
+        public string WorkingFolder { get; set; }
         public string LogFilePath { get; protected set; }
+        public WindowsCommands WithWorkingFolder(string workingFolder)
+        {
+            WorkingFolder = workingFolder;
+            return this;
+        }
         public WindowsCommands WithLogFile(string logFilePath)
         {
             LogFilePath = logFilePath;
@@ -28,8 +34,8 @@ namespace IvrLib
         }
         public WindowsCommands WithCommands(string commands)
         {
+            Console.WriteLine($"PS> {commands.Replace("`n", " ; ")}");
             Log($"PS> {commands}");
-            Console.WriteLine($"PS> {commands.Replace("\n", " \\n ")}");
             UserData.AddCommands($"{commands}");
             return this;
         }
@@ -38,23 +44,29 @@ namespace IvrLib
             if(string.IsNullOrWhiteSpace(outfile)) outfile = Path.GetFileName(path);
             return WithCommands($"wget \"{path}\" -Outfile \"{outfile}\"");
         }        
-        public WindowsCommands WithInstall(string path)
+        public WindowsCommands WithInstall(string localFile, string installArgs)
         {
-            var fileName = Path.GetFileName(path);
-            switch (Path.GetExtension(fileName).ToLower(CultureInfo.CurrentCulture))
+            switch (Path.GetExtension(localFile).ToLower(CultureInfo.CurrentCulture))
             {
                 case ".exe":
-                    WithCommands($"./{fileName} /s | Out-Null");
+                    WithCommands($"\"{localFile}\" {installArgs} | Out-Null");
                     break;
                 case ".msi":
-                    WithCommands($"msiexec /i {fileName} /quiet | Out-Null");
+                    WithCommands($"msiexec /i \"{localFile}\" {installArgs} | Out-Null");
                     break;
             }
             return this;
         }
-        public WindowsCommands WithDownloadAndInstall(params string[] paths)
+        public WindowsCommands WithDownloadAndInstall(params string[] products)
         {
-            foreach(var path in paths) WithDownload(path, null).WithInstall(path);
+            foreach (var pathAndArgs in products)
+            {
+                var ps = pathAndArgs.IndexOfAny(new char[] { ' ', '\t' });
+                var remotePath = 0 < ps ? pathAndArgs.Substring(0, ps) : pathAndArgs;
+                var installArgs = 0 < ps ? pathAndArgs.Substring(ps) : "";
+                var localFile = $"{WorkingFolder}\\{Path.GetFileName(remotePath)}";
+                WithDownload(remotePath, localFile).WithInstall(localFile, installArgs);
+            }
             return this;
         }
         public WindowsCommands WithEnvironmentVariable(string name, string value)
