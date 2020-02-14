@@ -49,7 +49,7 @@ namespace IvrLib
             switch (Path.GetExtension(localFile).ToLower(CultureInfo.CurrentCulture))
             {
                 case ".exe":
-                    WithCommands($"\"{localFile}\" {installArgs} | Out-Null");
+                    WithCommands($"./{localFile} {installArgs} | Out-Null");
                     break;
                 case ".msi":
                     WithCommands($"msiexec /i \"{localFile}\" {installArgs} | Out-Null");
@@ -61,10 +61,11 @@ namespace IvrLib
         {
             foreach (var pathAndArgs in products)
             {
-                var ps = pathAndArgs.IndexOfAny(new char[] { ' ', '\t' });
+                var ps = pathAndArgs.IndexOfAny(new char[] { ' ', '\t', ',', ';', });
                 var remotePath = 0 < ps ? pathAndArgs.Substring(0, ps) : pathAndArgs;
                 var installArgs = 0 < ps ? pathAndArgs.Substring(ps) : "";
-                var localFile = $"{WorkingFolder}\\{Path.GetFileName(remotePath)}";
+                //var localFile = $"{WorkingFolder}\\{Path.GetFileName(remotePath)}";
+                var localFile = Path.GetFileName(remotePath);
                 WithDownload(remotePath, localFile).WithInstall(localFile, installArgs);
             }
             return this;
@@ -104,10 +105,13 @@ namespace IvrLib
             }
             return this;
         }
-        public WindowsCommands WithNewFolder(string newFolderPath, bool setLocation = true)
+        public WindowsCommands WithNewFolder(string newFolderPath, bool setLocation = false)
         {
             WithCommands($"New-Item -ItemType Directory -Force -Path \"{newFolderPath}\"");
-            if(setLocation) WithCommands($"Set-Location \"{newFolderPath}\"");
+            if(setLocation) {
+                WithCommands($"Set-Location \"{newFolderPath}\"");
+                WorkingFolder = newFolderPath;
+            }
             return this;
         }
         public WindowsCommands WithDisableUAC(bool restartComputer = false)

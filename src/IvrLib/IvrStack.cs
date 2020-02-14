@@ -71,38 +71,36 @@ namespace IvrLib
 
             var workingFolder = $"C:\\ProgramData\\{id}";
             var commandsToRun = new WindowsCommands()
-                .WithWorkingFolder(workingFolder);
-
-            commandsToRun
                 // working folder and log file
-                .WithNewFolder(workingFolder)
+                .WithNewFolder(workingFolder, setLocation: true)
                 .WithLogFile($"{workingFolder}\\{id}.log").Log($"User profile: $env:userprofile")    // C:\Users\Administrator
                 // RDP user
                 .WithNewUser(props.UserName, props.UserPassword, props.UserGroups.ToArray());
 
             commandsToRun
                 // more AWS-enabled users
-                .WithEc2Credentials(props.UserName, props.Env.Account, role.RoleName)
-                .WithEc2Credentials(null, props.Env.Account, role.RoleName); // system
+                .WithEc2Credentials("$Env:USERNAME", props.Env.Account, role.RoleName)  // current user (Administrator)
+                .WithEc2Credentials(props.UserName, props.Env.Account, role.RoleName)   // RDP user
+                .WithEc2Credentials(null, props.Env.Account, role.RoleName);            // system
 
             props.EC2Users?.ToList().ForEach(user => {
-                //WriteLine($"EC2User: {user}");
                 commandsToRun.WithEc2Credentials(user, props.Env.Account, role.RoleName);
             });
 
+            commandsToRun
+                .WithDownloadAndInstall($"https://aka.ms/vs/16/release/vc_redist.x86.exe /s",
+                    $"https://download.visualstudio.microsoft.com/download/pr/9f010da2-d510-4271-8dcc-ad92b8b9b767/d2dd394046c20e0563ce5c45c356653f/dotnet-runtime-3.1.0-win-x64.exe /s",
+                    $"https://awscli.amazonaws.com/AWSCLIV2.msi /quiet"
+                );
+
             if(!string.IsNullOrWhiteSpace(props.s3i_args)) {
-                //WriteLine($"s3i_args: {props.s3i_args}");
-                commandsToRun.WithEnvironmentVariable("s3i_args", $"{props.s3i_args} --stage {workingFolder}\\s3i\\");
+                commandsToRun
+                    .WithDownloadAndInstall($"https://github.com/OlegBoulanov/s3i/releases/download/v1.0.325/s3i.msi /quiet")
+                    .WithEnvironmentVariable("s3i_args", $" --stage {workingFolder}\\s3i {props.s3i_args}")
+                    .WithCommands("Restart-Service -Name s3i -Force");
             }
 
-            commandsToRun
-                .WithDownloadAndInstall("https://aka.ms/vs/16/release/vc_redist.x86.exe /s"
-                    , "https://download.visualstudio.microsoft.com/download/pr/9f010da2-d510-4271-8dcc-ad92b8b9b767/d2dd394046c20e0563ce5c45c356653f/dotnet-runtime-3.1.0-win-x64.exe /s"
-                    , "https://awscli.amazonaws.com/AWSCLIV2.msi /quiet"
-                    //, "https://github.com/OlegBoulanov/s3i/releases/download/v1.0.322/s3i.msi /quiet"
-                );
-                
-                /*
+/*
             commandsToRun
                 .WithDisableUAC(restartComputer: false)
                 // more before restarting?
