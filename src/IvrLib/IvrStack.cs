@@ -114,11 +114,12 @@ namespace IvrLib
             // If requested, install and run s3i to install the rest indirectly from specific remote configuration
             if(!string.IsNullOrWhiteSpace(props.s3i_args)) {
                 commandsToRun
-                    .WithDownloadAndInstall($"https://github.com/OlegBoulanov/s3i/releases/download/v1.0.325/s3i.msi /quiet")
+                    .WithDownloadAndInstall($"https://github.com/OlegBoulanov/s3i/releases/download/v1.0.328/s3i.msi /quiet")
                     .WithEnvironmentVariable("s3i_args", $" --stage {workingFolder}\\s3i {props.s3i_args}")
                     .WithCommands("Restart-Service -Name s3i -Force");  // install products frome the line above
             }
 /*
+// $timeout=8; $timer=[Diagnostics.StopWatch]::StartNew();while(($timer.Elapsed.TotalSeconds -lt $timeout)) { Start-Sleep -Seconds 1; Write-Host $timer.Elapsed.TotalSeconds };$timer.Stop();
             commandsToRun
                 .WithDisableUAC(restartComputer: false)
                 // more before restarting?
