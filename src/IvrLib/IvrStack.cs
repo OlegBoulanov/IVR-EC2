@@ -62,7 +62,7 @@ namespace IvrLib
                                 .WithResources(),
                             new PolicyStatement().Allow().WithActions("ses:SendEmail")
                                 .WithResources(),
-                            new PolicyStatement().Allow().WithActions("events.PutEvents")
+                            new PolicyStatement().Allow().WithActions("events:PutEvents")
                                 .WithResources(),                          
                         },
                     })}
