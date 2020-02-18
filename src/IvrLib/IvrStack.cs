@@ -54,9 +54,17 @@ namespace IvrLib
                                 .WithResources(props.S3ObjectResources("logs", "sessions", "segments", "tools")),
                             new PolicyStatement().Allow().WithActions("s3:DeleteObject")
                                 .WithResources(props.S3ObjectResources("userjobs")),
+                            new PolicyStatement().Allow().WithActions("sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:GetQueueUrl", "sqs:ReceiveMessage", "sqs:SendMessage")
+                                .WithResources(),
+                            new PolicyStatement().Allow().WithActions("cloudwatch:GetMetricData", "cloudwatch:GetMetricStatistics", "cloudwatch:ListMetrics", "cloudwatch:PutMetricData")
+                                .WithResources(),
                             new PolicyStatement().Allow().WithActions("sns:Publish")
                                 .WithResources(),
-                          },
+                            new PolicyStatement().Allow().WithActions("ses:SendEmail")
+                                .WithResources(),
+                            new PolicyStatement().Allow().WithActions("events.PutEvents")
+                                .WithResources(),                          
+                        },
                     })}
                 },
             });
@@ -69,7 +77,7 @@ namespace IvrLib
             });
             foreach(var rule in props.IngressRules)
             {
-                securityGroup.AddIngressRule(Peer.Ipv4(rule.Key), Port.Tcp(rule.Value), $"Ingress: {rule.Key}:{rule.Value}");    
+                securityGroup.WithIngressRule(rule);    
             }
 
             //var eip = new CfnEIP(this, "IvrEIP", new CfnEIPProps            {            });            WriteLine($"EIP: {eip.LogicalId}");

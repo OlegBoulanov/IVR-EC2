@@ -1,4 +1,5 @@
 ﻿using Amazon.CDK;
+using Amazon.CDK.AWS.EC2;
 using System;
 using System.IO;
 using static System.Console;
@@ -44,7 +45,7 @@ namespace Ivr
 
             var rdps = app.Node.Resolve(ctx, "RDPs", help: "expected as comma-separated list of IPv4 CIDRs")
                 ?.Split(',', StringSplitOptions.RemoveEmptyEntries);
-            var ingressEndpoints = new Dictionary<string, int>(rdps.Select(x => new KeyValuePair<string, int>(x.Trim(), 3389)));
+            var rdpInbounds = rdps.Select(x => new IngressRule { Props = new IngressRuleProps { Peer = Peer.Ipv4(x.Trim()), Connection = Port.Tcp(3389), Description = $"RDP", RemoteRule = false }});
             // can add more inbound CIDR:port pairs here...
             var ec2users = app.Node.Resolve(ctx, "Ec2users")
                 ?.Split(',', StringSplitOptions.RemoveEmptyEntries)
@@ -57,7 +58,7 @@ namespace Ivr
                     Account = account,
                     Region = region,
                 },
-                IngressRules = ingressEndpoints,
+                IngressRules = rdpInbounds,
                 //KeyName = app.Node.Resolve(ctx, "keyname"),
                 RdpUserName = app.Node.Resolve(ctx, "RdpUserName"),
                 RdpUserPassword = app.Node.Resolve(ctx, "RdpUserPassword"),
