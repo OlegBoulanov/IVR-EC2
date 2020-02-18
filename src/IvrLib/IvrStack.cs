@@ -118,13 +118,15 @@ namespace IvrLib
                     .WithEnvironmentVariable("s3i_args", $" --stage {workingFolder}\\s3i {props.s3i_args}")
                     .WithCommands("Restart-Service -Name s3i -Force");  // install products frome the line above
             }
-/*
+
 // $timeout=8; $timer=[Diagnostics.StopWatch]::StartNew();while(($timer.Elapsed.TotalSeconds -lt $timeout)) { Start-Sleep -Seconds 1; Write-Host $timer.Elapsed.TotalSeconds };$timer.Stop();
+
             commandsToRun
                 .WithDisableUAC(restartComputer: false)
+                .WithCommands($"Rename-Computer {id} -Restart")
                 // more before restarting?
                 .WithRestart(); // ...reboot to complete fixing UAC, and s3i will kick in at restart...
-*/                
+
             // Finally - create our instance!
             this.Instance = new Instance_(this, $"CallHost", new InstanceProps
             {
