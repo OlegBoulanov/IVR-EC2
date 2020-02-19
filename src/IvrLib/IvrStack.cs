@@ -121,7 +121,9 @@ namespace IvrLib
 
 // $timeout=8; $timer=[Diagnostics.StopWatch]::StartNew();while(($timer.Elapsed.TotalSeconds -lt $timeout)) { Start-Sleep -Seconds 1; Write-Host $timer.Elapsed.TotalSeconds };$timer.Stop();
 
+            // final touches and reboot
             commandsToRun
+                .WithExplorerSettingsFile("explorer-settings.reg")
                 .WithDisableUAC(restartComputer: false)
                 .WithCommands($"Rename-Computer {id} -Restart")
                 // more before restarting?
