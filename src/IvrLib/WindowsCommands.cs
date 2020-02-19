@@ -109,6 +109,18 @@ namespace IvrLib
             }
             return this;
         }
+        public WindowsCommands WithCredentials(string username, string password, string credentials = "$credentials")
+        {
+            return WithCommands($"${credentials} = New-Object System.Management.Automation.PSCredential -ArgumentList @(\"{username}\",(ConvertTo-SecureString -String \"{password}\" -AsPlainText -Force))");
+        }
+        public WindowsCommands WithExplorerSettingsFile(string path, int hidden = 1, int hideFileExt = 0)
+        {
+            var settings = "Windows Registry Editor Version 5.00\n";
+            settings += $"[HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced]\n";
+            settings += $"\"Hidden\"=DWORD:{hidden}\n";
+            settings += $"\"HideFileExt\"=DWORD:{hideFileExt}\n";
+            return WithFile(path, settings);//.WithCommands($"regedit /s {path}");
+        }
         public WindowsCommands WithNewFolder(string newFolderPath, bool setLocation = false)
         {
             WithCommands($"New-Item -ItemType Directory -Force -Path \"{newFolderPath}\"");
