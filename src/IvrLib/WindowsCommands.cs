@@ -90,9 +90,14 @@ namespace IvrLib
         public WindowsCommands WithEc2Credentials(string user, string account, string role)
         {
             // https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-metahtml
-            var userprofile = string.IsNullOrWhiteSpace(user) ? "C:\\Windows\\System32\\config\\systemprofile" : $"C:\\Users\\{user}";
-            Log($"Set EC2 creds for {user ?? "SYSTEM"}, {account}/{role} => {userprofile}");
-            return WithFile($"{userprofile}\\.aws\\credentials", $"[default]\ncredential_source = Ec2InstanceMetadata\nrole_arn = arn:aws:iam::{account}:role/{role}");
+            var relativePath = ".aws\\credentials";
+            var profileData = $"[default]\ncredential_source = Ec2InstanceMetadata\nrole_arn = arn:aws:iam::{account}:role/{role}";
+            if(string.IsNullOrWhiteSpace(user)) {
+                // set for both 64 and 32 bit apps
+                return WithFile($"C:\\Windows\\System32\\config\\systemprofile\\{relativePath}", profileData)
+                      .WithFile($"C:\\Windows\\SysWOW64\\config\\systemprofile\\{relativePath}", profileData);
+            } 
+            return WithFile($"C:\\Users\\{user}\\{relativePath}", profileData);
         }
         public WindowsCommands WithNewUser(string userName, string userPassword, params string [] addToGroups)
         {
