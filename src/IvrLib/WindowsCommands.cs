@@ -14,6 +14,10 @@ namespace IvrLib
         public UserData UserData { get; protected set; } = UserData.ForWindows();
         public string WorkingFolder { get; set; }
         public string LogFilePath { get; protected set; }
+        public static string PowerShellValue(string s)
+        {
+            return s.Replace("\n", "`n").Replace("\"", "`\"");
+        }
         public WindowsCommands WithWorkingFolder(string workingFolder)
         {
             WorkingFolder = workingFolder;
@@ -28,7 +32,7 @@ namespace IvrLib
         {
             if(!string.IsNullOrWhiteSpace(LogFilePath))
             {
-                UserData.AddCommands($"Add-Content -Path \"{LogFilePath}\" -Force -Value \"$(Get-Date -Format \"HH:mm:ss.fff\"): {s.Replace("\n", "`n").Replace("\"", "`\"")}\"");
+                UserData.AddCommands($"Add-Content -Path \"{LogFilePath}\" -Force -Value \"$(Get-Date -Format \"HH:mm:ss.fff\"): {PowerShellValue(s)}\"");
             }
             return this;
         }
@@ -76,14 +80,14 @@ namespace IvrLib
         public WindowsCommands WithFile(string name, string content)
         {
             WithCommands($"New-Item -Force -Path \"{name}\"");
-            return WithCommands($"Add-Content -Path \"{name}\" -Force -Value \"{content.Replace("\n", "`n")}\"");
+            return WithCommands($"Add-Content -Path \"{name}\" -Force -Value \"{PowerShellValue(content)}\"");
         }        
         public WindowsCommands WithFiles(params IDictionary<string, string>[] allfiles)
         {
             foreach(var files in allfiles) foreach(var file in files)
             {
                 WithCommands($"New-Item -Force -Path \"{file.Key}\"");
-                WithCommands($"Add-Content -Path \"{file.Key}\" -Value \"{file.Value.Replace("\n", "`n")}\"");
+                WithCommands($"Add-Content -Path \"{file.Key}\" -Value \"{PowerShellValue(file.Value)}\"");
             }
             return this;
         }
@@ -109,17 +113,25 @@ namespace IvrLib
             }
             return this;
         }
-        public WindowsCommands WithCredentials(string username, string password, string credentials = "$credentials")
+        public WindowsCommands WithCredentials(string username, string password, string credentialVarName)
         {
-            return WithCommands($"${credentials} = New-Object System.Management.Automation.PSCredential -ArgumentList @(\"{username}\",(ConvertTo-SecureString -String \"{password}\" -AsPlainText -Force))");
+            return WithCommands($"{credentialVarName} = New-Object System.Management.Automation.PSCredential -ArgumentList @(\"{username}\",(ConvertTo-SecureString -String \"{password}\" -AsPlainText -Force))");
+        }
+        public WindowsCommands WithStartProcess(string path, string args, string credentialVarName, string extras = null)
+        {
+            var command = $"Start-Process -FilePath \"{path}\"";
+            if(!string.IsNullOrWhiteSpace(args)) command += $" -ArgumentList \"{args}\"";
+            if(!string.IsNullOrWhiteSpace(credentialVarName)) command += $" -Credential {credentialVarName}";
+            if(!string.IsNullOrWhiteSpace(extras)) command += " " + extras;
+            return WithCommands(command);
         }
         public WindowsCommands WithExplorerSettingsFile(string path, int hidden = 1, int hideFileExt = 0)
         {
-            var settings = "Windows Registry Editor Version 5.00\n";
-            settings += $"[HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced]\n";
-            settings += $"\"Hidden\"=DWORD:{hidden}\n";
-            settings += $"\"HideFileExt\"=DWORD:{hideFileExt}\n";
-            return WithFile(path, settings);//.WithCommands($"regedit /s {path}");
+            var settings = "Windows Registry Editor Version 5.00";
+            settings += $"\n[HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced]";
+            settings += $"\n\"Hidden\"=dword:{hidden}";
+            settings += $"\n\"HideFileExt\"=dword:{hideFileExt}";
+            return WithFile(path, settings);
         }
         public WindowsCommands WithNewFolder(string newFolderPath, bool setLocation = false)
         {

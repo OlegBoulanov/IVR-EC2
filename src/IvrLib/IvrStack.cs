@@ -84,15 +84,19 @@ namespace IvrLib
 
             // Now is time to assemble PowerShell command to execute at first start
             var workingFolder = $"C:\\ProgramData\\{id}";
+            var explorerSettingsPath = $"{workingFolder}\\explorer_settings.reg";
             var commandsToRun = new WindowsCommands()
                 // working folder and log file
                 .WithNewFolder(workingFolder, setLocation: true)
-                .WithLogFile($"{workingFolder}\\{id}.log").Log($"User profile: $env:userprofile");    // C:\Users\Administrator
+                .WithLogFile($"{workingFolder}\\{id}.log").Log($"User profile: $env:userprofile")    // C:\Users\Administrator
+                .WithExplorerSettingsFile(explorerSettingsPath, hidden: 1, hideFileExt: 0);
 
             // Create RDP user first
             if(!string.IsNullOrWhiteSpace(props.RdpUserName)) {
                 commandsToRun 
-                    .WithNewUser(props.RdpUserName, props.RdpUserPassword, props.UserGroups.ToArray());
+                    .WithNewUser(props.RdpUserName, props.RdpUserPassword, props.UserGroups.ToArray())
+                    .WithCredentials(props.RdpUserName, props.RdpUserPassword, "$creds")
+                    .WithStartProcess("regedit", $"/s {explorerSettingsPath}", "$creds");
             }
 
             // AWS-enable certain users
@@ -123,14 +127,13 @@ namespace IvrLib
 
             // final touches and reboot
             commandsToRun
-                .WithExplorerSettingsFile("explorer-settings.reg")
                 .WithDisableUAC(restartComputer: false)
-                .WithCommands($"Rename-Computer {id} -Restart")
-                // more before restarting?
-                .WithRestart(); // ...reboot to complete fixing UAC, and s3i will kick in at restart...
-
+                .WithCommands($"Rename-Computer {id}")
+                // anything else to do - before restarting?
+                .WithRestart(); // ...reboot to complete fixing UAC/renaming...
+                
             // Finally - create our instance!
-            this.Instance = new Instance_(this, $"CallHost", new InstanceProps
+            var instanceProps = new InstanceProps
             {
                 InstanceType = InstanceType.Of(InstanceClass.BURSTABLE3, InstanceSize.LARGE),
                 MachineImage = new WindowsImage(WindowsVersion.WINDOWS_SERVER_2019_ENGLISH_FULL_BASE),
@@ -143,8 +146,8 @@ namespace IvrLib
                             Encrypted = true,
                         }),
                     },
-                },               
-                //KeyName = props.KeyName,
+                },
+                KeyName = props.KeyPairName,
                 Role = role,
                 SecurityGroup = securityGroup,
                 VpcSubnets = new SubnetSelection
@@ -152,7 +155,8 @@ namespace IvrLib
                     SubnetType = SubnetType.PUBLIC
                 },
                 UserData = commandsToRun.UserData,
-            });
+            };
+            this.Instance = new Instance_(this, $"CallHost", instanceProps);
         }
     }
 }
