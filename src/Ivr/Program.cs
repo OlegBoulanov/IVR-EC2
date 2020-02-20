@@ -59,7 +59,7 @@ namespace Ivr
                     Region = region,
                 },
                 IngressRules = rdpInbounds,
-                //KeyName = app.Node.Resolve(ctx, "keyname"),
+                KeyPairName = app.Node.Resolve(ctx, "KeyPairName"),
                 RdpUserName = app.Node.Resolve(ctx, "RdpUserName"),
                 RdpUserPassword = app.Node.Resolve(ctx, "RdpUserPassword"),
                 BucketsDomain = app.Node.Resolve(ctx, "BucketsDomain"),
