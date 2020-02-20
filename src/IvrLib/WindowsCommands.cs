@@ -28,11 +28,11 @@ namespace IvrLib
             LogFilePath = logFilePath;
             return this;
         }
-        public WindowsCommands Log(string s)
+        public WindowsCommands Log(string s = null)
         {
             if(!string.IsNullOrWhiteSpace(LogFilePath))
             {
-                UserData.AddCommands($"Add-Content -Path \"{LogFilePath}\" -Force -Value \"$(Get-Date -Format \"HH:mm:ss.fff\"): {PowerShellValue(s)}\"");
+                UserData.AddCommands($"Add-Content -Path \"{LogFilePath}\" -Force -Value \"{(string.IsNullOrWhiteSpace(s)?"":$"$(Get-Date -Format \"HH:mm:ss.fff\"): {PowerShellValue(s)}")}\"");
             }
             return this;
         }

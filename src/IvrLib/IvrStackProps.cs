@@ -14,7 +14,7 @@ namespace IvrLib
         public string KeyPairName { get; set; }
         public string RdpUserName { get; set; }
         public string RdpUserPassword { get; set; }
-        public IEnumerable<string> UserGroups { get; set; } = new List<string> { "Administrators", "Remote Desktop Users" };
+        public IEnumerable<string> RdpUserGroups { get; set; } = new List<string> { "Administrators", "Remote Desktop Users" };
         public IEnumerable<IngressRule> IngressRules { get; set; }
         public string BucketsDomain { get; set; }   // .useast1.company.com, region related, but doesn't have to match region exactly
         public IEnumerable<string> EC2Users { get; set; }
