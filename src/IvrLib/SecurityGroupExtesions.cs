@@ -6,14 +6,10 @@ namespace IvrLib
 {
     public static class SecurityGroupExtensions
     {
-        public static SecurityGroup WithIngressRule(this SecurityGroup group, IngressRuleProps props)
-        {
-            group.AddIngressRule(props.Peer, props.Connection, props.Description, props.RemoteRule);
-            return group;
-        }
         public static SecurityGroup WithIngressRule(this SecurityGroup group, IngressRule rule)
         {
-            return group.WithIngressRule(rule.Props);
+            group.AddIngressRule(rule.Peer, rule.Port, rule.Description, rule.RemoteRule);
+            return group;
         }
     }
 }

@@ -45,7 +45,7 @@ namespace Ivr
 
             var rdps = app.Node.Resolve(ctx, "RDPs", help: "expected as comma-separated list of IPv4 CIDRs")
                 ?.Split(',', StringSplitOptions.RemoveEmptyEntries);
-            var rdpInbounds = rdps.Select(x => new IngressRule { Props = new IngressRuleProps { Peer = Peer.Ipv4(x.Trim()), Connection = Port.Tcp(3389), Description = $"RDP", RemoteRule = false }});
+            var rdpInbounds = rdps.Select(x => new IngressRule { Peer = Peer.Ipv4(x.Trim()), Port = Port.Tcp(3389), Description = $"RDP", RemoteRule = false });
             // can add more inbound CIDR:port pairs here...
             var ec2users = app.Node.Resolve(ctx, "Ec2users")
                 ?.Split(',', StringSplitOptions.RemoveEmptyEntries)
