@@ -28,12 +28,19 @@ namespace Ivr
             var comment = app.Node.Resolve(ctx, "comment") ?? "no comments";
             System.Console.WriteLine($"{account}/{region}, {comment}");
 
-            var rdps = app.Node.Resolve(ctx, "RDPs", help: "expected as comma-separated list of IPv4 CIDRs")
+            var rdps = app.Node.Resolve(ctx, "RdpCIDRs", help: "expected as comma-separated list of IPv4 CIDRs, like '73.118.72.189/32, 54.203.115.236/32'")
                 ?.Split(',', StringSplitOptions.RemoveEmptyEntries);
             
-            // ingress is for RDP and SIP only
-            var ingressRules = rdps.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), $"RDP"))
-                .Concat(SipProviders.Select(region));
+            // we expect to have an RDP connection
+            var keyPairName = app.Node.Resolve(ctx, "KeyPairName");
+            var rdpUserName = app.Node.Resolve(ctx, "RdpUserName");
+            var rdpUserPassword = app.Node.Resolve(ctx, "RdpUserPassword");
+            if(string.IsNullOrWhiteSpace(keyPairName) && string.IsNullOrWhiteSpace(rdpUserName)) throw new ArgumentNullException($"RdpUserName, or KeyPairName (to retrieve Administrator account password) required");
+
+            // Ingress traffic open for RDP and inbound SIP providers only
+            var rdpIngressRules = rdps.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), $"RDP client"));
+            var voipIngressRules = SipProviders.Select(region);
+            if(0 == voipIngressRules.Count()) throw new ArgumentNullException($"Region {region} seem not having any SIP providers");
             
             var ec2users = app.Node.Resolve(ctx, "Ec2users")
                 ?.Split(',', StringSplitOptions.RemoveEmptyEntries)
@@ -46,16 +53,16 @@ namespace Ivr
                     Account = account,
                     Region = region,
                 },
-                IngressRules = ingressRules,
-                KeyPairName = app.Node.Resolve(ctx, "KeyPairName"),
-                RdpUserName = app.Node.Resolve(ctx, "RdpUserName"),
-                RdpUserPassword = app.Node.Resolve(ctx, "RdpUserPassword"),
+                IngressRules = rdpIngressRules.Concat(voipIngressRules),
+                KeyPairName = keyPairName,
+                RdpUserName = rdpUserName,
+                RdpUserPassword = rdpUserPassword,
                 BucketsDomain = app.Node.Resolve(ctx, "BucketsDomain"),
                 EC2Users = ec2users,
                 s3i_args = app.Node.Resolve(ctx, "s3i_args"),
             };
             new IvrStack(app, "IvrStack", ivrStackProps);
-            
+
             app.Synth();
         }
     }
