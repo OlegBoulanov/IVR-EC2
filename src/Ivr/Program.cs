@@ -1,13 +1,10 @@
-﻿using Amazon.CDK;
-using Amazon.CDK.AWS.EC2;
-using System;
-using System.IO;
-using static System.Console;
+﻿using System;
+using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Linq;
 
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Amazon.CDK;
+using Amazon.CDK.AWS.EC2;
 
 using IvrLib;
 
@@ -35,11 +32,15 @@ namespace Ivr
             var keyPairName = app.Node.Resolve(ctx, "KeyPairName");
             var rdpUserName = app.Node.Resolve(ctx, "RdpUserName");
             var rdpUserPassword = app.Node.Resolve(ctx, "RdpUserPassword");
-            if(string.IsNullOrWhiteSpace(keyPairName) && string.IsNullOrWhiteSpace(rdpUserName)) throw new ArgumentNullException($"RdpUserName, or KeyPairName (to retrieve Administrator account password) required");
+            if(string.IsNullOrWhiteSpace(keyPairName) && string.IsNullOrWhiteSpace(rdpUserName)) throw new ArgumentNullException($"RdpUserName, or KeyPairName (to retrieve Administrator account password later) is required");
 
             // Ingress traffic open for RDP and inbound SIP providers only
             var rdpIngressRules = rdps.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), $"RDP client"));
-            var voipIngressRules = SipProviders.Select(region);
+            var voipIngressPorts = new List<Port> { 
+                Port.UdpRange(15060, 15062), 
+                Port.UdpRange(15064, 15320),
+            };
+            var voipIngressRules = SipProviders.Select(region, new Regex(app.Node.Resolve(ctx, "SipProviders") ?? ".+"), voipIngressPorts);
             if(0 == voipIngressRules.Count()) throw new ArgumentNullException($"Region {region} seem not having any SIP providers");
             
             var ec2users = app.Node.Resolve(ctx, "Ec2users")
@@ -53,7 +54,7 @@ namespace Ivr
                     Account = account,
                     Region = region,
                 },
-                IngressRules = rdpIngressRules.Concat(voipIngressRules),
+                SecurityGroupRules = rdpIngressRules.Concat(voipIngressRules),
                 KeyPairName = keyPairName,
                 RdpUserName = rdpUserName,
                 RdpUserPassword = rdpUserPassword,

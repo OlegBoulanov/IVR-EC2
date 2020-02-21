@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,79 +9,80 @@ namespace IvrLib
 {
     public class SipProviders
     {
-        public static IEnumerable<IngressRule> Select(string region)
+        public static IEnumerable<SecurityGroupRule> Select(string region, Regex providerNameRex, IEnumerable<Port> ingressPorts)
         {
-            return Providers.Aggregate(new List<IngressRule>(), (list, provider) =>
+            return Providers.Aggregate(new List<SecurityGroupRule>(), (list, provider) =>
             {
-                list.AddRange(provider.Value.Select(region));
+                if ((null == providerNameRex) || providerNameRex.Match(provider.Name).Success)
+                {
+                    list.AddRange(provider.Select(region, ingressPorts));
+                }
                 return list;
             });
         }
-        public const string SipSignalling = "(SIP/Signalling)";
-        public const string RtpMedia = "(RTP/Media)";
-        public const string SipRtp = "(SIP/RTP)";
-        protected static IDictionary<string, SipProvider> Providers = new Dictionary<string, SipProvider>
+        public static IEnumerable<string> KnownProviderNames { get { return Providers.Select(p => p.Name); } }
+        public const string SipSignalling = "Signalling";
+        public const string RtpMedia = "RTP Media";
+        public const string SipRtp = "SIP/RTP";
+        //
+        // Here we need to define only Egress rules, Ingress will be derived from these during selection
+        //  but explicit Igress rules can also be added here
+        protected static IEnumerable<SipProvider> Providers = new List<SipProvider>
         {
-            // https://docs.aws.amazon.com/chime/latest/ag/network-config.html#cvc
+            // https://d1.awsstatic.com/whitepapers/leveraging_chime_voice_connector_for_sip_trunking.pdf (Appendix B)
             //   that's all - as of 2/20/2020
-            { "Amazon", new SipProvider("Amazon", "Amazon Chime Voice Connector",new Dictionary<string, IEnumerable<IngressRule>> {
-                    { "us-east-1", new List<IngressRule> {
-                        new IngressRule(Peer.Ipv4("3.80.16.0/23"), Port.UdpRange(5000, 65000), SipRtp),
-                        new IngressRule(Peer.Ipv4("52.55.62.128/25"), Port.UdpRange(1024, 65535), SipRtp),
-                        new IngressRule(Peer.Ipv4("52.55.63.0/25"), Port.UdpRange(1024, 65535), SipRtp),
-                        new IngressRule(Peer.Ipv4("34.212.95.128/25"), Port.UdpRange(1024, 65535), SipRtp),
-                        new IngressRule(Peer.Ipv4("34.223.21.0/25"), Port.UdpRange(1024, 65535), SipRtp),
+            new SipProvider("Amazon", "Amazon Chime Voice Connector",new Dictionary<string, IEnumerable<SecurityGroupRule>> {
+                    { "us-east-1", new List<SecurityGroupRule> {
+                        new EgressRule(Peer.Ipv4("3.80.16.0/23"), Port.UdpRange(5000, 65000), SipRtp),
+                        new EgressRule(Peer.Ipv4("52.55.62.128/25"), Port.UdpRange(1024, 65535), SipRtp),
+                        new EgressRule(Peer.Ipv4("52.55.63.0/25"), Port.UdpRange(1024, 65535), SipRtp),
+                        new EgressRule(Peer.Ipv4("34.212.95.128/25"), Port.UdpRange(1024, 65535), SipRtp),
+                        new EgressRule(Peer.Ipv4("34.223.21.0/25"), Port.UdpRange(1024, 65535), SipRtp),
                     }},
-                    { "us-west-2", new List<IngressRule> {
-                        new IngressRule(Peer.Ipv4("99.77.253.0/24"), Port.UdpRange(5000, 65000), SipRtp),
+                    { "us-west-2", new List<SecurityGroupRule> {
+                        new EgressRule(Peer.Ipv4("99.77.253.0/24"), Port.UdpRange(5000, 65000), SipRtp),
                     }}
                 }
-            )},    
-            // https://www.twilio.com/docs/sip-trunking/configure-with-interconnect#IPwhitelist-tnx
+            ),    
+            // https://www.twilio.com/docs/sip-trunking#termination
             //   they have more - see the list, map to AWS Regions, and add below
-            { "Twilio", new SipProvider("Twilio", "Twilio Elastic SIP Trunking", new Dictionary<string, IEnumerable<IngressRule>> {
-                    { "us-east-1", new List<IngressRule> {
-                        new IngressRule(Peer.Ipv4("208.78.112.64/30"), Port.Udp(5060), SipSignalling),
-                        new IngressRule(Peer.Ipv4("208.78.112.64/26"), Port.UdpRange(10000, 20000), RtpMedia),
+            new SipProvider("Twilio", "Twilio Elastic SIP Trunking", new Dictionary<string, IEnumerable<SecurityGroupRule>> {
+                    { "us-east-1", new List<SecurityGroupRule> {
+                        new EgressRule(Peer.Ipv4("54.172.60.0/30"), Port.Udp(5060), SipSignalling),
+                        new EgressRule(Peer.Ipv4("54.172.60.0/23"), Port.UdpRange(10000, 20000), RtpMedia),
+                        new EgressRule(Peer.Ipv4("34.203.250.0/23"), Port.UdpRange(10000, 20000), RtpMedia),
                     }},
-                    { "us-west-2", new List<IngressRule> {
-                        new IngressRule(Peer.Ipv4("67.213.136.64/30"), Port.Udp(5060), SipSignalling),
-                        new IngressRule(Peer.Ipv4("67.213.136.64/26"), Port.UdpRange(10000, 20000), RtpMedia),
+                    { "us-west-2", new List<SecurityGroupRule> {
+                        new EgressRule(Peer.Ipv4("54.244.51.0/30"), Port.Udp(5060), SipSignalling),
+                        new EgressRule(Peer.Ipv4("54.244.51.0/24"), Port.UdpRange(10000, 20000), RtpMedia),
                     }},
-                    { "ap-southeast-2", new List<IngressRule> {
-                        new IngressRule(Peer.Ipv4("103.146.214.68/30"), Port.Udp(5060), SipSignalling),
-                        new IngressRule(Peer.Ipv4("103.146.214.64/26"), Port.UdpRange(10000, 20000), RtpMedia),
+                    { "ap-southeast-2", new List<SecurityGroupRule> {
+                        new EgressRule(Peer.Ipv4("54.252.254.64/30"), Port.Udp(5060), SipSignalling),
+                        new EgressRule(Peer.Ipv4("54.252.254.64/26"), Port.UdpRange(10000, 20000), RtpMedia),
+                        new EgressRule(Peer.Ipv4("3.104.90.0/24"), Port.UdpRange(10000, 20000), RtpMedia),
                     }}
                 }
-            )},
-            // https://www.plivo.com/docs/voice/concepts/ip-address-whitelisting/
+            ),
+            // https://www.plivo.com/docs/sip-trunking/zentrunk-quickstart#creating-an-inbound-trunk
+            // https://support.plivo.com/support/solutions/articles/17000012097-what-ip-addresses-do-i-need-to-whitelist-on-my-communications-infrastructure-for-zentrunk-sip-trunkin
             //   again, see the link for full list
-            { "Plivo", new SipProvider("Plivo", "Plivo SIP Trunking",new Dictionary<string, IEnumerable<IngressRule>> {
-                    { "us-east-1", new List<IngressRule> {
-                        new IngressRule(Peer.Ipv4("54.215.5.82/32"), Port.Udp(5060), SipSignalling),
-                        new IngressRule(Peer.Ipv4("107.20.176.37/32"), Port.Udp(5060), SipSignalling),
-                        new IngressRule(Peer.Ipv4("107.20.251.237/32"), Port.Udp(5060), SipSignalling),
-                        new IngressRule(Peer.Ipv4("184.169.138.133/32"), Port.Udp(5060), SipSignalling),
-                        new IngressRule(Peer.Ipv4("3.93.158.128/25"), Port.UdpRange(16384, 32768), RtpMedia),
-                        new IngressRule(Peer.Ipv4("52.205.63.192/26"), Port.UdpRange(16384, 32768), RtpMedia),
+            new SipProvider("Plivo", "Plivo Zentrunk SIP Trunking",new Dictionary<string, IEnumerable<SecurityGroupRule>> {
+                    { "us-east-1", new List<SecurityGroupRule> {
+                        new EgressRule(Peer.Ipv4("18.214.109.128/25"), Port.Udp(5060), SipSignalling),
+                        new EgressRule(Peer.Ipv4("18.215.142.0/26"), Port.Udp(5060), SipSignalling),
+                        new EgressRule(Peer.Ipv4("18.214.109.128/25"), Port.UdpRange(10000, 30000), RtpMedia),
+                        new EgressRule(Peer.Ipv4("18.215.142.0/26"), Port.UdpRange(10000, 30000), RtpMedia),
                     }},
-                    { "us-west-1", new List<IngressRule> {
-                        new IngressRule(Peer.Ipv4("54.215.5.82/32"), Port.Udp(5060), SipSignalling),
-                        new IngressRule(Peer.Ipv4("107.20.176.37/32"), Port.Udp(5060), SipSignalling),
-                        new IngressRule(Peer.Ipv4("107.20.251.237/32"), Port.Udp(5060), SipSignalling),
-                        new IngressRule(Peer.Ipv4("184.169.138.133/32"), Port.Udp(5060), SipSignalling),
-                        new IngressRule(Peer.Ipv4("52.9.254.64/26"), Port.UdpRange(16384, 32768), RtpMedia),
+                    { "us-west-1", new List<SecurityGroupRule> {
+                        new EgressRule(Peer.Ipv4("13.52.9.0/25"), Port.Udp(5060), SipSignalling),
+                        new EgressRule(Peer.Ipv4("13.52.9.0/25"), Port.UdpRange(10000, 20000), RtpMedia),
                     }},
-                    { "ap-southeast-2", new List<IngressRule> {
-                        new IngressRule(Peer.Ipv4("54.215.5.82/32"), Port.Udp(5060), SipSignalling),
-                        new IngressRule(Peer.Ipv4("107.20.176.37/32"), Port.Udp(5060), SipSignalling),
-                        new IngressRule(Peer.Ipv4("107.20.251.237/32"), Port.Udp(5060), SipSignalling),
-                        new IngressRule(Peer.Ipv4("184.169.138.133/32"), Port.Udp(5060), SipSignalling),
-                        new IngressRule(Peer.Ipv4("52.65.191.160/27"), Port.UdpRange(16384, 32768), RtpMedia),
-                        new IngressRule(Peer.Ipv4("52.65.127.160/27"), Port.UdpRange(16384, 32768), RtpMedia),
+                    { "ap-southeast-2", new List<SecurityGroupRule> {
+                        new EgressRule(Peer.Ipv4("13.238.202.192/26"), Port.Udp(5060), SipSignalling),
+                        new EgressRule(Peer.Ipv4("13.238.202.192/26"), Port.UdpRange(10000, 20000), RtpMedia),
                     }},
                 }
-            )},
+            ),
         };
     }
 }

@@ -73,11 +73,11 @@ namespace IvrLib
             var securityGroup = new SecurityGroup(this, $"Ingress", new SecurityGroupProps
             {
                 Vpc = Vpc,
-                AllowAllOutbound = true,
+                AllowAllOutbound = false,
             });
-            foreach(var rule in props.IngressRules)
+            foreach(var rule in props.SecurityGroupRules)
             {
-                securityGroup.WithIngressRule(rule);    
+                securityGroup.WithSecurityGroupRule(rule);    
             }
 
             //var eip = new CfnEIP(this, "IvrEIP", new CfnEIPProps            {            });            WriteLine($"EIP: {eip.LogicalId}");

@@ -10,18 +10,9 @@ using Amazon.CDK.AWS.EC2;
 
 namespace IvrLib
 {
-    public class IngressRule
+    public class IngressRule : SecurityGroupRule
     {
-        public IPeer Peer { get; set; }
-        public Port Port { get; set; }
-        public string Description { get; set; }
-        public bool RemoteRule { get; set; } = false;
-        public IngressRule(IPeer peer, Port port, string description = null, bool remote = false)
-        {
-            Peer = peer;
-            Port = port;
-            Description = description;
-            RemoteRule = remote;
-        }
+        public Port DestinationPort { get { return Port; } set { Port = value; } }
+        public IngressRule(IPeer peer, Port port, string description = null, bool remote = false) : base(peer, port, description, remote) {}
     }
 }

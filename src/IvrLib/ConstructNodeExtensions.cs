@@ -18,6 +18,8 @@ namespace IvrLib
 {
     public static class ConstructNodeExtensions
     {
+        // Resolve context variable
+        // May return null, or throw help message ArgumentException, if set
         public static string Resolve(this ConstructNode node, Context ctx, string name, string envar = null, string help = null)
         {
             var v = node.TryGetContext(name) as string                       // 1. CDK implemented context: command line args -c "name=value", or ~/cdk.json and/or ./cdk.json
