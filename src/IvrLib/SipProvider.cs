@@ -17,10 +17,6 @@ namespace IvrLib
             Description = description;
             Rules = rules;
         }
-        protected string MakeDescription(SecurityGroupRule rule)
-        {
-            return $"{Description}{(string.IsNullOrWhiteSpace(rule.Description)?"":$" {rule.Description}")}";
-        }
         public IEnumerable<SecurityGroupRule> Select(string region, IEnumerable<Port> ingressPorts)
         {
             if(Rules.TryGetValue(region, out var rules)) {
