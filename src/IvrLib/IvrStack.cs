@@ -21,7 +21,7 @@ namespace IvrLib
         public IvrStack(Construct scope, string id, IvrStackProps props = null) : base(scope, id, props)
         {
             // We'll start with brand new VPC
-            this.Vpc = new IvrLib.Vpc(this, $"Public", new VpcProps
+            this.Vpc = new Vpc(this, $"Public", new VpcProps
             {
                 Cidr = "10.10.10.0/24",
                 MaxAzs = 2,
