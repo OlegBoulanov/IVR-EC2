@@ -17,5 +17,13 @@ namespace IvrLib
             Description = description;
             Rules = rules;
         }
+        protected string MakeDescription(IngressRule rule)
+        {
+            return $"{Description}{(string.IsNullOrWhiteSpace(rule.Description)?"":$" {rule.Description}")}";
+        }
+        public IEnumerable<IngressRule> Select(string region)
+        {
+            return Rules.TryGetValue(region, out var rules)? rules.Select(rule => new IngressRule(rule.Peer, rule.Port, MakeDescription(rule))) : new List<IngressRule>();
+        }
     }
 }
