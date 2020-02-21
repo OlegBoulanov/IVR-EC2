@@ -20,21 +20,6 @@ namespace Ivr
 
             var app = new App();
 
-            // Configuration values resolution
-            // Environment (defaults)
-            //  - account
-            //  - region
-            //  - keypair
-            // ~/cdk.json [private zone]
-            //  - RDP address(es)
-            //  - RDP user name
-            //  - RDP user password
-            //  - keypair
-            // .../cdk[-flavor].json [project/public zone]
-            //      - overrides
-            // finally, [private] command line -c name=value overrides for specific synth/deployments
-            //  these sets of values can also come in files: -c ctx=file
-
             // can't rely on (incorrect) CDK implementation, so read these files one by one, values from previous may be overridden by those from next
             var ctx = Context.FromJsonFiles($"{OSAgnostic.Home}/cdk.json", $"cdk.json", app.Node.TryGetContext("ctx") as string);
 
@@ -45,8 +30,11 @@ namespace Ivr
 
             var rdps = app.Node.Resolve(ctx, "RDPs", help: "expected as comma-separated list of IPv4 CIDRs")
                 ?.Split(',', StringSplitOptions.RemoveEmptyEntries);
-            var rdpInbounds = rdps.Select(x => new IngressRule { Peer = Peer.Ipv4(x.Trim()), Port = Port.Tcp(3389), Description = $"RDP", RemoteRule = false });
-            // can add more inbound CIDR:port pairs here...
+            
+            // ingress is for RDP and SIP only
+            var ingressRules = rdps.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), $"RDP"))
+                .Concat(SipProviders.Select(region));
+            
             var ec2users = app.Node.Resolve(ctx, "Ec2users")
                 ?.Split(',', StringSplitOptions.RemoveEmptyEntries)
                 ?.Select(u => u.Trim());
@@ -58,7 +46,7 @@ namespace Ivr
                     Account = account,
                     Region = region,
                 },
-                IngressRules = rdpInbounds,
+                IngressRules = ingressRules,
                 KeyPairName = app.Node.Resolve(ctx, "KeyPairName"),
                 RdpUserName = app.Node.Resolve(ctx, "RdpUserName"),
                 RdpUserPassword = app.Node.Resolve(ctx, "RdpUserPassword"),
@@ -66,8 +54,8 @@ namespace Ivr
                 EC2Users = ec2users,
                 s3i_args = app.Node.Resolve(ctx, "s3i_args"),
             };
-
             new IvrStack(app, "IvrStack", ivrStackProps);
+            
             app.Synth();
         }
     }

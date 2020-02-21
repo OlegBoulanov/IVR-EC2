@@ -15,6 +15,13 @@ namespace IvrLib
         public IPeer Peer { get; set; }
         public Port Port { get; set; }
         public string Description { get; set; }
-        public bool RemoteRule { get; set; }
+        public bool RemoteRule { get; set; } = false;
+        public IngressRule(IPeer peer, Port port, string description = null, bool remote = false)
+        {
+            Peer = peer;
+            Port = port;
+            Description = description;
+            RemoteRule = remote;
+        }
     }
 }
