@@ -1,13 +1,17 @@
 # IVR-EC2
 
-AWS CDK experiments:
+AWS CDK study:
 - build/execute both on Linux and Windows
-- 
+- separate public structure and private settings (context)
 
 Prerequisites:
 - AWS Account and valid credentials
 - [ CDK_DEFAULT_ACCOUNT/CDK_DEFAULT_REGION ]
-- RDP_PUBLIC_IP - set it to your IP (like 73.121.98.115) to allow RDP access to created instance
+- Context values resolved in that order:
+    ~/cdk.json
+    ./cdk.json
+    -c ctx=file.json
+    -c name=value ...
 
 Lifecycle (run in project directory):
 - cdk synth (will create cdk.context.json, if does not exist)

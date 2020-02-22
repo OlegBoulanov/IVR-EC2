@@ -37,5 +37,10 @@ namespace IvrLib
             }
             return new List<SecurityGroupRule>();
         }
+        public bool NameMatchesAny(IEnumerable<string> listOfNames)
+        {
+            return 0 == listOfNames.Count() || default != listOfNames.FirstOrDefault(name => name.Equals(Name, StringComparison.CurrentCultureIgnoreCase));
+        }
+
     }
 }

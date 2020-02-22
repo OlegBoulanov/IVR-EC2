@@ -13,7 +13,7 @@ namespace IvrLib
         {
             return Providers.Aggregate(new List<SecurityGroupRule>(), (list, provider) =>
             {
-                if ((null == providers || 0 == providers.Count()) || default != providers.FirstOrDefault(name => name == provider.Name))
+                if (null == providers || provider.NameMatchesAny(providers))
                 {
                     list.AddRange(provider.Select(region, ingressPorts));
                 }
