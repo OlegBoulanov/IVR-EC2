@@ -25,8 +25,7 @@ namespace Ivr
             var comment = app.Node.Resolve(ctx, "comment") ?? "no comments";
             System.Console.WriteLine($"{account}/{region}, {comment}");
 
-            var rdps = app.Node.Resolve(ctx, "RdpCIDRs", help: "expected as comma-separated list of IPv4 CIDRs, like '73.118.72.189/32, 54.203.115.236/32'")
-                ?.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var rdps = app.Node.Resolve(ctx, "RdpCIDRs", help: "expected as comma-separated list of IPv4 CIDRs, like '73.118.72.189/32, 54.203.115.236/32'").Csv();
             
             // we expect to have an RDP connection
             var keyPairName = app.Node.Resolve(ctx, "KeyPairName");
@@ -40,12 +39,10 @@ namespace Ivr
                 Port.UdpRange(15060, 15062), 
                 Port.UdpRange(15064, 15320),
             };
-            var voipIngressRules = SipProviders.Select(region, new Regex(app.Node.Resolve(ctx, "SipProviders") ?? ".+"), voipIngressPorts);
+            var voipIngressRules = SipProviders.Select(region, app.Node.Resolve(ctx, "SipProviders")?.Csv(), voipIngressPorts);
             if(0 == voipIngressRules.Count()) throw new ArgumentNullException($"Region {region} seem not having any SIP providers");
             
-            var ec2users = app.Node.Resolve(ctx, "Ec2users")
-                ?.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                ?.Select(u => u.Trim());
+            var ec2users = app.Node.Resolve(ctx, "Ec2users")?.Csv();
 
             var ivrStackProps = new IvrStackProps
             {

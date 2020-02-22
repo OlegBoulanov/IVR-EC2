@@ -9,11 +9,11 @@ namespace IvrLib
 {
     public class SipProviders
     {
-        public static IEnumerable<SecurityGroupRule> Select(string region, Regex providerNameRex, IEnumerable<Port> ingressPorts)
+        public static IEnumerable<SecurityGroupRule> Select(string region, IEnumerable<string> providers, IEnumerable<Port> ingressPorts)
         {
             return Providers.Aggregate(new List<SecurityGroupRule>(), (list, provider) =>
             {
-                if ((null == providerNameRex) || providerNameRex.Match(provider.Name).Success)
+                if ((null == providers || 0 == providers.Count()) || default != providers.FirstOrDefault(name => name == provider.Name))
                 {
                     list.AddRange(provider.Select(region, ingressPorts));
                 }

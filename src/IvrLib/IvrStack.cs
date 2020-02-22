@@ -73,7 +73,7 @@ namespace IvrLib
             var securityGroup = new SecurityGroup(this, $"Ingress", new SecurityGroupProps
             {
                 Vpc = Vpc,
-                AllowAllOutbound = false,
+                AllowAllOutbound = props.AllowAllOutbound,
             });
             foreach(var rule in props.SecurityGroupRules)
             {

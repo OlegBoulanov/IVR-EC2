@@ -16,6 +16,7 @@ namespace IvrLib
         public string RdpUserPassword { get; set; }
         public IEnumerable<string> RdpUserGroups { get; set; } = new List<string> { "Administrators", "Remote Desktop Users" };
         public IEnumerable<SecurityGroupRule> SecurityGroupRules { get; set; }
+        public bool AllowAllOutbound { get; set; } = true;
         public string BucketsDomain { get; set; }   // .useast1.company.com, region related, but doesn't have to match region exactly
         public IEnumerable<string> EC2Users { get; set; }
         public string s3i_args { get; set; }    // = "https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini --verbose";

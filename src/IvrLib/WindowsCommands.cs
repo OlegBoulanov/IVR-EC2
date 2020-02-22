@@ -38,7 +38,7 @@ namespace IvrLib
         }
         public WindowsCommands WithCommands(string commands)
         {
-            Console.WriteLine($"PS> {commands.Replace("`n", " ; ")}");
+            //Console.WriteLine($"PS> {commands.Replace("`n", " ; ")}");
             Log($"PS> {commands}");
             UserData.AddCommands($"{commands}");
             return this;
