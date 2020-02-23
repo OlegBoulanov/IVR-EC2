@@ -10,7 +10,7 @@ using Amazon.CDK.AWS.EC2;
 
 namespace IvrLib
 {
-    public class IngressPort
+    public class PortSpec
     {
         public Port Port { get; set; }
         public string Description { get; set; }

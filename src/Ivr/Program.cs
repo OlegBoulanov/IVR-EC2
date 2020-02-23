@@ -37,11 +37,11 @@ namespace Ivr
             var rdpIngressRules = rdpCIDRs.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), $"RDP client"));
 
             var udpPorts = app.Node.Resolve(ctx, "UdpPorts", help: "expected as comma-separated list of ingress ports, like '5060:Signalling, 5062-5300:Media'").Csv();
-            var udpIngressPorts = udpPorts.Aggregate(new List<IngressPort>(), 
+            var udpIngressPorts = udpPorts.Aggregate(new List<PortSpec>(), 
                 (ports, s) => {
                     var portRangeSpec = PortRangeSpec.Parse(s);
-                    if(portRangeSpec.Begin == portRangeSpec.End) ports.Add(new IngressPort { Port = Port.Udp(portRangeSpec.Begin), Description = portRangeSpec.Description, });
-                    else ports.Add(new IngressPort { Port = Port.UdpRange(portRangeSpec.Begin, portRangeSpec.End), Description = portRangeSpec.Description, });
+                    if(portRangeSpec.Begin == portRangeSpec.End) ports.Add(new PortSpec { Port = Port.Udp(portRangeSpec.Begin), Description = portRangeSpec.Description, });
+                    else ports.Add(new PortSpec { Port = Port.UdpRange(portRangeSpec.Begin, portRangeSpec.End), Description = portRangeSpec.Description, });
                     return ports;
                 });
 

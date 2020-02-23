@@ -17,7 +17,7 @@ namespace IvrLib
             Description = description;
             Rules = rules;
         }
-        public IEnumerable<SecurityGroupRule> Select(string region, IEnumerable<IngressPort> ingressPorts)
+        public IEnumerable<SecurityGroupRule> Select(string region, IEnumerable<PortSpec> ingressPorts)
         {
             if (Rules.TryGetValue(region, out var rules))
             {

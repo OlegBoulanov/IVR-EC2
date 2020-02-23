@@ -9,7 +9,7 @@ namespace IvrLib
 {
     public class SipProviders
     {
-        public static IEnumerable<SecurityGroupRule> Select(string region, IEnumerable<string> providers, IEnumerable<IngressPort> ingressPorts)
+        public static IEnumerable<SecurityGroupRule> Select(string region, IEnumerable<string> providers, IEnumerable<PortSpec> ingressPorts)
         {
             return Providers.Aggregate(new List<SecurityGroupRule>(), (list, provider) =>
             {
