@@ -76,10 +76,7 @@ namespace IvrLib
                 Vpc = Vpc,
                 AllowAllOutbound = props.AllowAllOutbound,
             });
-            foreach(var rule in props.SecurityGroupRules)
-            {
-                securityGroup.WithSecurityGroupRule(rule);    
-            }
+            props.SecurityGroupRules.ForEach(rule => securityGroup.WithSecurityGroupRule(rule));
 
             var eip = new CfnEIP(this, "IvrEIP", new CfnEIPProps { 
 
