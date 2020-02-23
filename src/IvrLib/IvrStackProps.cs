@@ -18,6 +18,7 @@ namespace IvrLib
         public IEnumerable<SecurityGroupRule> SecurityGroupRules { get; set; }
         public bool AllowAllOutbound { get; set; } = true;
         public string BucketsDomain { get; set; }   // .useast1.company.com, region related, but doesn't have to match region exactly
+        public string HostsDomainName {get; set; }   // host32.company.domain.net
         public IEnumerable<string> EC2Users { get; set; }
         public string s3i_args { get; set; }    // = "https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini --verbose";
         public string [] S3BucketResources(params string [] prefixes)

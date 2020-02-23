@@ -8,6 +8,7 @@ using System.Linq;
 using Amazon.CDK;
 using Amazon.CDK.AWS.EC2;
 using Amazon.CDK.AWS.IAM;
+using Amazon.CDK.AWS.Route53;
 using Amazon.CDK.AWS.SNS;
 using Amazon.CDK.AWS.SNS.Subscriptions;
 using Amazon.CDK.AWS.SQS;
@@ -17,7 +18,7 @@ namespace IvrLib
     public class IvrStack : Stack
     {
         public IVpc Vpc { get; protected set; }
-        public Instance_ Instance { get; protected set; }
+        public Instance_ Host { get; protected set; }
         public IvrStack(Construct scope, string id, IvrStackProps props = null) : base(scope, id, props)
         {
             // We'll start with brand new VPC
@@ -80,8 +81,11 @@ namespace IvrLib
                 securityGroup.WithSecurityGroupRule(rule);    
             }
 
-            //var eip = new CfnEIP(this, "IvrEIP", new CfnEIPProps            {            });            WriteLine($"EIP: {eip.LogicalId}");
-             
+            var eip = new CfnEIP(this, "IvrEIP", new CfnEIPProps { 
+
+            });
+            WriteLine($"EIP: lid:{eip.LogicalId}, iid:{eip.InstanceId}, pool:{eip.PublicIpv4Pool}, domain:{eip.Domain}");
+
             var hostProps = new HostPrimingProps
             {
                 HostName = $"{id}",
@@ -118,7 +122,24 @@ namespace IvrLib
                 },
                 UserData = HostPriming.PrimeForS3i(hostProps).UserData,
             };
-            this.Instance = new Instance_(this, $"CallHost", instanceProps);
+            Host = new Instance_(this, $"CallHost", instanceProps);
+
+            // Add it to our DNS           
+//            var publicZone = new PublicHostedZone(this, $"{id}_Zone", new PublicHostedZoneProps {
+//               ZoneName = "host.ivrstack-au.net",
+//                Comment = "Created by CDK for existing domain",
+//            });
+            var publicZone = HostedZone.FromLookup(this, $"{id}_Zone", new HostedZoneProviderProps{
+                DomainName = props.HostsDomainName,
+            });
+            var ARecord = new ARecord(this, $"{id}_Host", new ARecordProps{
+                Zone = publicZone,
+                RecordName = $"host.{publicZone.ZoneName}",
+                Target = RecordTarget.FromIpAddresses(Host.InstancePublicIp),
+                Ttl = Duration.Seconds(300),
+            });
+
+            //Console.WriteLine($"Instance PublicIP: {Host.InstancePublicIp}, {ARecord.DomainName}");
         }
     }
 }

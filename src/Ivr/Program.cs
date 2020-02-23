@@ -56,6 +56,7 @@ namespace Ivr
                 RdpUserName = rdpUserName,
                 RdpUserPassword = rdpUserPassword,
                 BucketsDomain = app.Node.Resolve(ctx, "BucketsDomain"),
+                HostsDomainName = app.Node.Resolve(ctx, "HostsDomainName", null, "Existing domain name is expected"),
                 EC2Users = ec2users,
                 s3i_args = app.Node.Resolve(ctx, "s3i_args"),
             };

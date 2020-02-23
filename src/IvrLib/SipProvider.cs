@@ -37,9 +37,9 @@ namespace IvrLib
             }
             return new List<SecurityGroupRule>();
         }
-        public bool NameMatchesAny(IEnumerable<string> listOfNames)
+        public bool NameMatchesAny(IEnumerable<string> tags)
         {
-            return 0 == listOfNames.Count() || default != listOfNames.FirstOrDefault(name => name.Equals(Name, StringComparison.CurrentCultureIgnoreCase));
+            return 0 == tags.Count() || default != tags.FirstOrDefault(name => name.Equals(Name, StringComparison.CurrentCultureIgnoreCase));
         }
 
     }
