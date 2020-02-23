@@ -14,7 +14,7 @@ namespace IvrLib
         public static IngressPortRange Parse(string s)
         {
             var rangeDescSpec = s.Split(':', StringSplitOptions.RemoveEmptyEntries);
-            if (2 < rangeDescSpec.Length) throw new ArgumentNullException($"Invalid ingress port spec: '{s}'");
+            if (2 < rangeDescSpec.Length) throw new ArgumentNullException($"Invalid ingress port range spec: '{s}', too many colon separated fields");
             var description = rangeDescSpec.Length < 2 ? null : rangeDescSpec[1];
             var portRangeSpec = rangeDescSpec[0].Split('-', StringSplitOptions.RemoveEmptyEntries);
             if(0 < portRangeSpec.Length && int.TryParse(portRangeSpec[0], out var begin)) {
@@ -23,7 +23,7 @@ namespace IvrLib
                 if(2 == portRangeSpec.Length && int.TryParse(portRangeSpec[1], out var end))
                     return new IngressPortRange { Begin = begin, End = end, Description = description, };
             }
-            throw new FormatException($"Invalid ingress port range spec: '{portRangeSpec}'");
+            throw new FormatException($"Invalid ingress port range spec: '{portRangeSpec}', one or two (dash separated) ports epected");
         }
     }
 }
