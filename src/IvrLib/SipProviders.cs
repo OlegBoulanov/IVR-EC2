@@ -9,7 +9,7 @@ namespace IvrLib
 {
     public class SipProviders
     {
-        public static IEnumerable<SecurityGroupRule> Select(string region, IEnumerable<string> providers, IEnumerable<Port> ingressPorts)
+        public static IEnumerable<SecurityGroupRule> Select(string region, IEnumerable<string> providers, IEnumerable<IngressPort> ingressPorts)
         {
             return Providers.Aggregate(new List<SecurityGroupRule>(), (list, provider) =>
             {
@@ -55,6 +55,7 @@ namespace IvrLib
                     { "us-west-2", new List<SecurityGroupRule> {
                         new EgressRule(Peer.Ipv4("54.244.51.0/30"), Port.Udp(5060), SipSignalling),
                         new EgressRule(Peer.Ipv4("54.244.51.0/24"), Port.UdpRange(10000, 20000), RtpMedia),
+                        new IngressRuleTemplate(Peer.Ipv4("54.244.51.0/24")),
                     }},
                     { "ap-southeast-2", new List<SecurityGroupRule> {
                         new EgressRule(Peer.Ipv4("54.252.254.64/30"), Port.Udp(5060), SipSignalling),

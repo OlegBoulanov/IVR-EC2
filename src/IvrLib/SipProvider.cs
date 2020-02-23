@@ -17,19 +17,28 @@ namespace IvrLib
             Description = description;
             Rules = rules;
         }
-        public IEnumerable<SecurityGroupRule> Select(string region, IEnumerable<Port> ingressPorts)
+        public IEnumerable<SecurityGroupRule> Select(string region, IEnumerable<IngressPort> ingressPorts)
         {
-            if(Rules.TryGetValue(region, out var rules)) {
-                return rules.SelectMany(rule => {
+            if (Rules.TryGetValue(region, out var rules))
+            {
+                return rules.SelectMany(rule =>
+                {
                     var rules2 = new List<SecurityGroupRule>();
-                    if(rule is EgressRule) {
-                        // for each egress rule, create corresponding ingress - for all ports
-                        rules2.Add(new EgressRule(rule.Peer, rule.Port, $"{Description} {rule.Description}/egress", rule.RemoteRule));
-                        rules2.AddRange(ingressPorts.Select(p => new IngressRule(rule.Peer, p, $"{Description} {rule.Description}/+ingress", rule.RemoteRule)));
+                    // check for most specific first
+                    if (rule is IngressRuleTemplate)
+                    {
+                        // ingress rule templates should be open to provided ports
+                        rules2.AddRange(ingressPorts.Select(p => new IngressRule(rule.Peer, p.Port, $"{Description}: {rule.Description ?? "(Ingress)"}/{p.Description ?? "(Any)"}", rule.RemoteRule)));
                     }
-                    else if(rule is IngressRule) {
-                        // explicitly define should be transferred as they are
+                    else if (rule is IngressRule)
+                    {
+                        // explicitly defined ingress should be transferred as they are
                         rules2.Add(new IngressRule(rule.Peer, rule.Port, $"{Description} {rule.Description}/ingress", rule.RemoteRule));
+                    }
+                    else if (rule is EgressRule)
+                    {
+                        // egress are always explicit
+                        rules2.Add(new EgressRule(rule.Peer, rule.Port, $"{Description} {rule.Description}/egress", rule.RemoteRule));
                     }
                     else throw new SecurityGroupRuleException(rule);
                     return rules2;

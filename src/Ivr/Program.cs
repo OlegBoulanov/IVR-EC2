@@ -35,9 +35,9 @@ namespace Ivr
 
             // Ingress traffic open for RDP and inbound SIP providers only
             var rdpIngressRules = rdps.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), $"RDP client"));
-            var voipIngressPorts = new List<Port> { 
-                Port.UdpRange(15060, 15062), 
-                Port.UdpRange(15064, 15320),
+            var voipIngressPorts = new List<IngressPort> { 
+                new IngressPort { Port = Port.UdpRange(15060, 15062), Description = "Signalling", } ,
+                new IngressPort { Port = Port.UdpRange(15064, 15320), Description = "Media", },
             };
             var voipIngressRules = SipProviders.Select(region, app.Node.Resolve(ctx, "SipProviders")?.Csv(), voipIngressPorts);
             if(0 == voipIngressRules.Count()) throw new ArgumentNullException($"Region {region} seem not having any SIP providers");
