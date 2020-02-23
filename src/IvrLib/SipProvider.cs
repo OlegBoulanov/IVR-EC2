@@ -24,15 +24,14 @@ namespace IvrLib
                 return rules.SelectMany(rule =>
                 {
                     var rules2 = new List<SecurityGroupRule>();
-                    // check for most specific first
                     if (rule is IngressRuleTemplate)
                     {
-                        // ingress rule templates should be open to provided ports
-                        rules2.AddRange(ingressPorts.Select(p => new IngressRule(rule.Peer, p.Port, $"{Description}: {rule.Description ?? "(Ingress)"}/{p.Description ?? "(Any)"}", rule.RemoteRule)));
+                        // ingress rule template translates to several rules, thus opening all specified ingress ports
+                        rules2.AddRange(ingressPorts.Select(p => new IngressRule(rule.Peer, p.Port, $"{Description} {rule.Description ?? "Ingress"}:{p.Description ?? "*"}", rule.RemoteRule)));
                     }
                     else if (rule is IngressRule)
                     {
-                        // explicitly defined ingress should be transferred as they are
+                        // explicitly defined ingress
                         rules2.Add(new IngressRule(rule.Peer, rule.Port, $"{Description} {rule.Description}/ingress", rule.RemoteRule));
                     }
                     else if (rule is EgressRule)

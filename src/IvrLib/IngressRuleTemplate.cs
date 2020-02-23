@@ -10,7 +10,7 @@ using Amazon.CDK.AWS.EC2;
 
 namespace IvrLib
 {
-    public class IngressRuleTemplate : IngressRule
+    public class IngressRuleTemplate : SecurityGroupRule
     {
         public IngressRuleTemplate(IPeer peer, string description = null, bool remote = false) : base(peer, null, description, remote) {}
     }

@@ -25,7 +25,7 @@ namespace Ivr
             var comment = app.Node.Resolve(ctx, "comment") ?? "no comments";
             System.Console.WriteLine($"{account}/{region}, {comment}");
 
-            var rdps = app.Node.Resolve(ctx, "RdpCIDRs", help: "expected as comma-separated list of IPv4 CIDRs, like '73.118.72.189/32, 54.203.115.236/32'").Csv();
+            var rdpCIDRs = app.Node.Resolve(ctx, "RdpCIDRs", help: "expected as comma-separated list of IPv4 CIDRs, like '73.118.72.189/32, 54.203.115.236/32'").Csv();
             
             // we expect to have an RDP connection
             var keyPairName = app.Node.Resolve(ctx, "KeyPairName");
@@ -34,13 +34,19 @@ namespace Ivr
             if(string.IsNullOrWhiteSpace(keyPairName) && string.IsNullOrWhiteSpace(rdpUserName)) throw new ArgumentNullException($"RdpUserName, or KeyPairName (to retrieve Administrator account password later) is required");
 
             // Ingress traffic open for RDP and inbound SIP providers only
-            var rdpIngressRules = rdps.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), $"RDP client"));
-            var voipIngressPorts = new List<IngressPort> { 
-                new IngressPort { Port = Port.UdpRange(15060, 15062), Description = "Signalling", } ,
-                new IngressPort { Port = Port.UdpRange(15064, 15320), Description = "Media", },
-            };
-            var voipIngressRules = SipProviders.Select(region, app.Node.Resolve(ctx, "SipProviders")?.Csv(), voipIngressPorts);
-            if(0 == voipIngressRules.Count()) throw new ArgumentNullException($"Region {region} seem not having any SIP providers");
+            var rdpIngressRules = rdpCIDRs.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), $"RDP client"));
+
+            var udpPorts = app.Node.Resolve(ctx, "UdpPorts", help: "expected as comma-separated list of ingress ports, like '5060:Signalling, 5062-5300:Media'").Csv();
+            var udpIngressPorts = udpPorts.Aggregate(new List<IngressPort>(), 
+                (ports, s) => {
+                    var portRangeSpec = IngressPortRange.Parse(s);
+                    if(portRangeSpec.Begin == portRangeSpec.End) ports.Add(new IngressPort { Port = Port.Udp(portRangeSpec.Begin), Description = portRangeSpec.Description, });
+                    else ports.Add(new IngressPort { Port = Port.UdpRange(portRangeSpec.Begin, portRangeSpec.End), Description = portRangeSpec.Description, });
+                    return ports;
+                });
+
+            var udpIngressRules = SipProviders.Select(region, app.Node.Resolve(ctx, "SipProviders")?.Csv(), udpIngressPorts);
+            if(0 == udpIngressRules.Count()) throw new ArgumentNullException($"Region {region} seem not having any SIP providers");
             
             var ec2users = app.Node.Resolve(ctx, "Ec2users")?.Csv();
 
@@ -51,7 +57,7 @@ namespace Ivr
                     Account = account,
                     Region = region,
                 },
-                SecurityGroupRules = rdpIngressRules.Concat(voipIngressRules),
+                SecurityGroupRules = rdpIngressRules.Concat(udpIngressRules),
                 KeyPairName = keyPairName,
                 RdpUserName = rdpUserName,
                 RdpUserPassword = rdpUserPassword,
