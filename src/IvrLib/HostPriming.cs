@@ -49,7 +49,7 @@ namespace IvrLib
                 commandsToRun
                     .WithDownloadAndInstall($"https://github.com/OlegBoulanov/s3i/releases/download/v1.0.328/s3i.msi /quiet")
                     .WithEnvironmentVariable("s3i_args", $" --stage {workingFolder}\\s3i {props.S3iArgs}")
-                    .WithCommands("Restart-Service -Name s3i -Force")  // install products frome the line above
+                    //.WithCommands("Restart-Service -Name s3i -Force")  // install products frome the line above - not before rename/restart !
                     .Log();
             }
 
