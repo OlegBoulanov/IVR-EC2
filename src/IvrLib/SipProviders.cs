@@ -34,13 +34,19 @@ namespace IvrLib
             new SipProvider("Amazon", "Amazon Chime Voice Connector",new Dictionary<string, IEnumerable<SecurityGroupRule>> {
                     { "us-east-1", new List<SecurityGroupRule> {
                         new EgressRule(Peer.Ipv4("3.80.16.0/23"), Port.UdpRange(5000, 65000), SipRtp),
+                        new IngressRuleTemplate(Peer.Ipv4("3.80.16.0/23")),
                         new EgressRule(Peer.Ipv4("52.55.62.128/25"), Port.UdpRange(1024, 65535), SipRtp),
+                        new IngressRuleTemplate(Peer.Ipv4("52.55.62.128/25")),
                         new EgressRule(Peer.Ipv4("52.55.63.0/25"), Port.UdpRange(1024, 65535), SipRtp),
+                        new IngressRuleTemplate(Peer.Ipv4("52.55.63.0/25")),
                         new EgressRule(Peer.Ipv4("34.212.95.128/25"), Port.UdpRange(1024, 65535), SipRtp),
+                        new IngressRuleTemplate(Peer.Ipv4("34.212.95.128/25")),
                         new EgressRule(Peer.Ipv4("34.223.21.0/25"), Port.UdpRange(1024, 65535), SipRtp),
+                        new IngressRuleTemplate(Peer.Ipv4("34.223.21.0/25")),
                     }},
                     { "us-west-2", new List<SecurityGroupRule> {
                         new EgressRule(Peer.Ipv4("99.77.253.0/24"), Port.UdpRange(5000, 65000), SipRtp),
+                        new IngressRuleTemplate(Peer.Ipv4("34.223.21.0/25")),
                     }}
                 }
             ),    
@@ -50,7 +56,9 @@ namespace IvrLib
                     { "us-east-1", new List<SecurityGroupRule> {
                         new EgressRule(Peer.Ipv4("54.172.60.0/30"), Port.Udp(5060), SipSignalling),
                         new EgressRule(Peer.Ipv4("54.172.60.0/23"), Port.UdpRange(10000, 20000), RtpMedia),
+                        new IngressRuleTemplate(Peer.Ipv4("54.172.60.0/23")),
                         new EgressRule(Peer.Ipv4("34.203.250.0/23"), Port.UdpRange(10000, 20000), RtpMedia),
+                        new IngressRuleTemplate(Peer.Ipv4("34.203.250.0/23")),
                     }},
                     { "us-west-2", new List<SecurityGroupRule> {
                         new EgressRule(Peer.Ipv4("54.244.51.0/30"), Port.Udp(5060), SipSignalling),
@@ -60,7 +68,9 @@ namespace IvrLib
                     { "ap-southeast-2", new List<SecurityGroupRule> {
                         new EgressRule(Peer.Ipv4("54.252.254.64/30"), Port.Udp(5060), SipSignalling),
                         new EgressRule(Peer.Ipv4("54.252.254.64/26"), Port.UdpRange(10000, 20000), RtpMedia),
+                        new IngressRuleTemplate(Peer.Ipv4("54.252.254.64/26")),
                         new EgressRule(Peer.Ipv4("3.104.90.0/24"), Port.UdpRange(10000, 20000), RtpMedia),
+                        new IngressRuleTemplate(Peer.Ipv4("3.104.90.0/24")),
                     }}
                 }
             ),
@@ -70,17 +80,21 @@ namespace IvrLib
             new SipProvider("Plivo", "Plivo Zentrunk SIP Trunking",new Dictionary<string, IEnumerable<SecurityGroupRule>> {
                     { "us-east-1", new List<SecurityGroupRule> {
                         new EgressRule(Peer.Ipv4("18.214.109.128/25"), Port.Udp(5060), SipSignalling),
-                        new EgressRule(Peer.Ipv4("18.215.142.0/26"), Port.Udp(5060), SipSignalling),
                         new EgressRule(Peer.Ipv4("18.214.109.128/25"), Port.UdpRange(10000, 30000), RtpMedia),
+                        new IngressRuleTemplate(Peer.Ipv4("18.214.109.128/25")),
+                        new EgressRule(Peer.Ipv4("18.215.142.0/26"), Port.Udp(5060), SipSignalling),
                         new EgressRule(Peer.Ipv4("18.215.142.0/26"), Port.UdpRange(10000, 30000), RtpMedia),
+                        new IngressRuleTemplate(Peer.Ipv4("18.215.142.0/26")),
                     }},
                     { "us-west-1", new List<SecurityGroupRule> {
                         new EgressRule(Peer.Ipv4("13.52.9.0/25"), Port.Udp(5060), SipSignalling),
                         new EgressRule(Peer.Ipv4("13.52.9.0/25"), Port.UdpRange(10000, 20000), RtpMedia),
+                        new IngressRuleTemplate(Peer.Ipv4("13.52.9.0/25")),
                     }},
                     { "ap-southeast-2", new List<SecurityGroupRule> {
                         new EgressRule(Peer.Ipv4("13.238.202.192/26"), Port.Udp(5060), SipSignalling),
                         new EgressRule(Peer.Ipv4("13.238.202.192/26"), Port.UdpRange(10000, 20000), RtpMedia),
+                        new IngressRuleTemplate(Peer.Ipv4("13.238.202.192/26")),
                     }},
                 }
             ),
