@@ -31,7 +31,7 @@ namespace IvrLib
         {
             // https://d1.awsstatic.com/whitepapers/leveraging_chime_voice_connector_for_sip_trunking.pdf (Appendix B)
             //   that's all - as of 2/20/2020
-            new SipProvider("Amazon", "Amazon Chime Voice Connector",new Dictionary<string, IEnumerable<SecurityGroupRule>> {
+            new SipProvider("Amazon", "Amazon Chime Voice Connector", new Dictionary<string, IEnumerable<SecurityGroupRule>> {
                     { "us-east-1", new List<SecurityGroupRule> {
                         new EgressRule(Peer.Ipv4("3.80.16.0/23"), Port.UdpRange(5000, 65000), SipRtp),
                         new IngressRuleTemplate(Peer.Ipv4("3.80.16.0/23")),
@@ -77,7 +77,7 @@ namespace IvrLib
             // https://www.plivo.com/docs/sip-trunking/zentrunk-quickstart#creating-an-inbound-trunk
             // https://support.plivo.com/support/solutions/articles/17000012097-what-ip-addresses-do-i-need-to-whitelist-on-my-communications-infrastructure-for-zentrunk-sip-trunkin
             //   again, see the link for full list
-            new SipProvider("Plivo", "Plivo Zentrunk SIP Trunking",new Dictionary<string, IEnumerable<SecurityGroupRule>> {
+            new SipProvider("Plivo", "Plivo Zentrunk SIP Trunking", new Dictionary<string, IEnumerable<SecurityGroupRule>> {
                     { "us-east-1", new List<SecurityGroupRule> {
                         new EgressRule(Peer.Ipv4("18.214.109.128/25"), Port.Udp(5060), SipSignalling),
                         new EgressRule(Peer.Ipv4("18.214.109.128/25"), Port.UdpRange(10000, 30000), RtpMedia),

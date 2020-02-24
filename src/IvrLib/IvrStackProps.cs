@@ -6,11 +6,13 @@ using static System.Console;
 using System.Linq;
 
 using Amazon.CDK;
+using Amazon.CDK.RegionInfo;
 
 namespace IvrLib
 {
     public class IvrStackProps : StackProps
     {
+        public RegionInfo RegionInfo { get; set; }
         public string KeyPairName { get; set; }
         public string RdpUserName { get; set; }
         public string RdpUserPassword { get; set; }

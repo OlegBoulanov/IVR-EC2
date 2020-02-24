@@ -5,6 +5,7 @@ using System.Linq;
 
 using Amazon.CDK;
 using Amazon.CDK.AWS.EC2;
+using Amazon.CDK.RegionInfo;
 
 using IvrLib;
 
@@ -20,10 +21,12 @@ namespace Ivr
             // can't rely on (incorrect) CDK implementation, so read these files one by one, values from previous may be overridden by those from next
             var ctx = Context.FromJsonFiles($"{OSAgnostic.Home}/cdk.json", $"cdk.json", app.Node.TryGetContext("ctx") as string);
 
-            var account = app.Node.Resolve(ctx, "account", "CDK_DEFAULT_ACCOUNT");
-            var region = app.Node.Resolve(ctx, "region", "CDK_DEFAULT_REGION");
-            var comment = app.Node.Resolve(ctx, "comment") ?? "no comments";
-            System.Console.WriteLine($"{account}/{region}, {comment}");
+            var accountNumber = app.Node.Resolve(ctx, "account", "CDK_DEFAULT_ACCOUNT");
+            var regionName = app.Node.Resolve(ctx, "region", "CDK_DEFAULT_REGION");
+            var regionInfo = RegionInfo.Get(regionName);
+            if(null == regionInfo || null == regionInfo.DomainSuffix) throw new ApplicationException($"Invalid region: '{regionName}'");
+
+            System.Console.WriteLine($"{accountNumber}/{regionInfo.Name}, {regionInfo.DomainSuffix}");
 
             var rdpCIDRs = app.Node.Resolve(ctx, "RdpCIDRs", help: "expected as comma-separated list of IPv4 CIDRs, like '73.118.72.189/32, 54.203.115.236/32'").Csv();
             
@@ -31,7 +34,7 @@ namespace Ivr
             var keyPairName = app.Node.Resolve(ctx, "KeyPairName");
             var rdpUserName = app.Node.Resolve(ctx, "RdpUserName");
             var rdpUserPassword = app.Node.Resolve(ctx, "RdpUserPassword");
-            if(string.IsNullOrWhiteSpace(keyPairName) && string.IsNullOrWhiteSpace(rdpUserName)) throw new ArgumentNullException($"RdpUserName, or KeyPairName (to retrieve Administrator account password later) is required");
+            if(string.IsNullOrWhiteSpace(keyPairName) && string.IsNullOrWhiteSpace(rdpUserName)) throw new ApplicationException($"RdpUserName, or KeyPairName (to retrieve Administrator account password later) is required");
 
             // Ingress traffic open for RDP and inbound SIP providers only
             var rdpIngressRules = rdpCIDRs.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), $"RDP client"));
@@ -45,8 +48,8 @@ namespace Ivr
                     return ports;
                 });
 
-            var udpIngressRules = SipProviders.Select(region, app.Node.Resolve(ctx, "SipProviders")?.Csv(), udpIngressPorts);
-            if(0 == udpIngressRules.Count()) throw new ArgumentNullException($"Region {region} seem not having any SIP providers");
+            var udpIngressRules = SipProviders.Select(regionInfo.Name, app.Node.Resolve(ctx, "SipProviders")?.Csv(), udpIngressPorts);
+            if(0 == udpIngressRules.Count()) throw new ApplicationException($"Region {regionInfo.Name} seem not having any SIP providers");
             
             var ec2users = app.Node.Resolve(ctx, "Ec2users")?.Csv();
 
@@ -54,9 +57,10 @@ namespace Ivr
             {
                 Env = new Amazon.CDK.Environment
                 {
-                    Account = account,
-                    Region = region,
+                    Account = accountNumber,
+                    Region = regionInfo.Name,
                 },
+                RegionInfo = regionInfo,
                 SecurityGroupRules = rdpIngressRules.Concat(udpIngressRules),
                 KeyPairName = keyPairName,
                 RdpUserName = rdpUserName,
