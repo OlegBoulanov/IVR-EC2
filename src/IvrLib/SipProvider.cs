@@ -24,20 +24,19 @@ namespace IvrLib
                 return rules.SelectMany(rule =>
                 {
                     var rules2 = new List<SecurityGroupRule>();
-                    if (rule is IngressRuleTemplate)
-                    {
-                        // ingress rule template translates to several rules, thus opening all specified ingress ports
-                        rules2.AddRange(ingressPorts.Select(p => new IngressRule(rule.Peer, p.Port, $"{Description} {rule.Description ?? "Ingress"}:{p.Description ?? "*"}", rule.RemoteRule)));
-                    }
-                    else if (rule is IngressRule)
+                    if (rule is IngressRule)
                     {
                         // explicitly defined ingress
-                        rules2.Add(new IngressRule(rule.Peer, rule.Port, $"{Description} {rule.Description}/ingress", rule.RemoteRule));
+                        rules2.Add(new IngressRule(rule.Peer, rule.Port, rule.Protocols).WithDescription($"{Description} {rule.Description}/ingress").WithRemoteRule(rule.RemoteRule));
                     }
                     else if (rule is EgressRule)
                     {
                         // egress are always explicit
-                        rules2.Add(new EgressRule(rule.Peer, rule.Port, $"{Description} {rule.Description}/egress", rule.RemoteRule));
+                        rules2.Add(new EgressRule(rule.Peer, rule.Port, rule.Protocols).WithDescription($"{Description} {rule.Description}/egress").WithRemoteRule(rule.RemoteRule));
+                        // add ingress rules for each port of the same protocol
+                        rules2.AddRange(ingressPorts.Where(ip => rule.Protocols.Contains(ip.Protocol)).Select(ip => {
+                            return new IngressRule(rule.Peer, rule.Port.Clone(ip.StartPort, ip.EndPort), rule.Protocols).WithDescription($"{Description} {rule.Description??ip.Protocol}/+ingress").WithRemoteRule(rule.RemoteRule);
+                        }));
                     }
                     else throw new SecurityGroupRuleException(rule);
                     return rules2;

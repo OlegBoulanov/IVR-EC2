@@ -12,16 +12,18 @@ namespace IvrLib
 {
     public abstract class SecurityGroupRule
     {
-        public IPeer Peer { get; set; }
-        public Port Port { get; set; }
+        public IPeer Peer { get; protected set; }
+        public Port Port { get; protected set; }
+        public string [] Protocols { get; protected set; }
         public string Description { get; set; }
         public bool RemoteRule { get; set; } = false;
-        public SecurityGroupRule(IPeer peer, Port port, string description, bool remote)
+        public SecurityGroupRule(IPeer peer, Port port, params string[] protocols)
         {
             Peer = peer;
             Port = port;
-            Description = description;
-            RemoteRule = remote;
+            Protocols = protocols;
         }
+        public SecurityGroupRule WithDescription(string description) { Description = description; return this;}
+        public SecurityGroupRule WithRemoteRule(bool remoteRule = true) { RemoteRule = remoteRule; return this;}
     }
 }

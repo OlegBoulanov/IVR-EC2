@@ -13,6 +13,6 @@ namespace IvrLib
     public class EgressRule : SecurityGroupRule
     {
         public Port SourcePort { get { return Port; } set { Port = value; } }
-        public EgressRule(IPeer peer, Port port, string description = null, bool remote = false) : base(peer, port, description, remote) {}
+        public EgressRule(IPeer peer, Port port, params string [] protocols) : base(peer, port, protocols) {}
     }
 }

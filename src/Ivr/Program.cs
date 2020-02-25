@@ -37,18 +37,13 @@ namespace Ivr
             if(string.IsNullOrWhiteSpace(keyPairName) && string.IsNullOrWhiteSpace(rdpUserName)) throw new ApplicationException($"RdpUserName, or KeyPairName (to retrieve Administrator account password later) is required");
 
             // Ingress traffic open for RDP and inbound SIP providers only
-            var rdpIngressRules = rdpCIDRs.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), $"RDP client"));
+            var rdpIngressRules = rdpCIDRs.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), "RDP").WithDescription($"RDP client"));
 
-            var udpPorts = app.Node.Resolve(ctx, "UdpPorts", help: "expected as comma-separated list of ingress ports, like '5060:Signalling, 5062-5300:Media'").Csv();
-            var udpIngressPorts = udpPorts.Aggregate(new List<PortSpec>(), 
-                (ports, s) => {
-                    var portRangeSpec = PortRangeSpec.Parse(s);
-                    if(portRangeSpec.Begin == portRangeSpec.End) ports.Add(new PortSpec { Port = Port.Udp(portRangeSpec.Begin), Description = portRangeSpec.Description, });
-                    else ports.Add(new PortSpec { Port = Port.UdpRange(portRangeSpec.Begin, portRangeSpec.End), Description = portRangeSpec.Description, });
-                    return ports;
-                });
+            var ingressPorts = app.Node.Resolve(ctx, "IngressPorts", help: "expected as comma-separated list of ingress port ranges, like 'SIP 5060', or 'SIPS 5061, RTP 5062-5300'")
+                .Csv()
+                .Select(s => PortSpec.Parse(s));
 
-            var udpIngressRules = SipProviders.Select(regionInfo.Name, app.Node.Resolve(ctx, "SipProviders")?.Csv(), udpIngressPorts);
+            var udpIngressRules = SipProviders.Select(regionInfo.Name, app.Node.Resolve(ctx, "SipProviders")?.Csv(), ingressPorts);
             if(0 == udpIngressRules.Count()) throw new ApplicationException($"Region {regionInfo.Name} seem not having any SIP providers");
             
             var ec2users = app.Node.Resolve(ctx, "Ec2users")?.Csv();
