@@ -16,6 +16,8 @@ namespace IvrLibTests
             ParseAndCheck("ALL TRAFFIC");
             ParseAndCheck("ALL PORTS");
             ParseAndCheck("UDP ALL PORTS");
+            ParseAndCheck("ICMP Type 8");
+            Assert.Throws(typeof(NotImplementedException), () => ParseAndCheck("ICMP Type 9"));
             ParseAndCheck("2000-3000");
             ParseAndCheck("2000");
             ParseAndCheck("UDP 2000");

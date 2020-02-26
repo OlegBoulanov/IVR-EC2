@@ -38,19 +38,5 @@ namespace IvrLibTests
             Assert.AreEqual("UDP 2000", Port.Udp(2000).ToString());
             Assert.AreEqual("UDP 2000-3000", Port.UdpRange(2000, 3000).ToString());
         }
-        void ParseAndCheck(string s) { Assert.AreEqual(s, PortHelpers.Parse(s).ToString()); }
-        [Test]
-        public void ParseAndToStringTest()
-        {
-            ParseAndCheck("ALL TRAFFIC");
-            ParseAndCheck("ALL PORTS");
-            ParseAndCheck("UDP ALL PORTS");
-            ParseAndCheck("2000-3000");
-            ParseAndCheck("2000");
-            ParseAndCheck("2000-3000");
-            ParseAndCheck("UDP 2000");
-            ParseAndCheck("UDP 2000-3000");
-        }
-
     }
 }

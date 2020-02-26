@@ -33,6 +33,9 @@ namespace IvrLib
                     case "UDP":
                         if(3 == fields.Length && "ALL" == fields[1].ToUpper() && "PORTS" == fields[2].ToUpper()) return Port.AllUdp();
                         return ParseRange(fields[1], (p) => Port.Udp(p), (b, e) => Port.UdpRange(b, e), p1, p2);
+                    case "ICMP":
+                        if(3 == fields.Length && "TYPE" == fields[1].ToUpper() && "8" == fields[2].ToUpper()) return Port.IcmpPing();
+                        throw new NotImplementedException($"ICMP is not fully implemented yet");
                     case "ALL":
                         switch (fields[1].ToUpper())
                         {
