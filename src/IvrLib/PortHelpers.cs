@@ -31,11 +31,14 @@ namespace IvrLib
                 switch (fields[0].ToUpper())
                 {
                     case "UDP":
-                        if(3 == fields.Length && "ALL" == fields[1].ToUpper() && "PORTS" == fields[2].ToUpper()) return Port.AllUdp();
+                        if(3 == fields.Length && "ALL" == fields[1].ToUpper() && "PORTS" == fields[2].ToUpper()) 
+                            return Port.AllUdp();
                         return ParseRange(fields[1], (p) => Port.Udp(p), (b, e) => Port.UdpRange(b, e), p1, p2);
                     case "ICMP":
-                        if(3 == fields.Length && "TYPE" == fields[1].ToUpper()) return Port.IcmpType(int.Parse(fields[2]));
-                        if(5 == fields.Length && "TYPE" == fields[1].ToUpper() && "CODE" == fields[3].ToUpper()) return Port.IcmpTypeAndCode(int.Parse(fields[2]), int.Parse(fields[4]));
+                        if(3 == fields.Length && "TYPE" == fields[1].ToUpper()) 
+                            return Port.IcmpType(0 < p1 ? p1 : int.Parse(fields[2]));
+                        if(5 == fields.Length && "TYPE" == fields[1].ToUpper() && "CODE" == fields[3].ToUpper()) 
+                            return Port.IcmpTypeAndCode(0 < p1 ? p1 : int.Parse(fields[2]), 0 < p2 ? p2 : int.Parse(fields[4]));
                         break;
                     case "ALL":
                         switch (fields[1].ToUpper())
