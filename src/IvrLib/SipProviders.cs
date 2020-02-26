@@ -51,6 +51,7 @@ namespace IvrLib
                     }},
                     { "us-west-2", new List<SecurityGroupRule> {
                         new EgressRule(Peer.Ipv4("54.244.51.0/30"), Port.Udp(5060), "SIP"),
+                        new EgressRule(Peer.Ipv4("54.244.51.0/30"), Port.Tcp(5061), "SIPS"),
                         new EgressRule(Peer.Ipv4("54.244.51.0/24"), Port.UdpRange(10000, 20000), "RTP"),
                     }},
                     { "ap-southeast-2", new List<SecurityGroupRule> {
