@@ -78,11 +78,6 @@ namespace IvrLib
             });
             props.SecurityGroupRules.ForEach(rule => securityGroup.WithSecurityGroupRule(rule));
 
-            var eip = new CfnEIP(this, "IvrEIP", new CfnEIPProps { 
-
-            });
-            WriteLine($"EIP: lid:{eip.LogicalId}, iid:{eip.InstanceId}, pool:{eip.PublicIpv4Pool}, domain:{eip.Domain}");
-
             var hostProps = new HostPrimingProps
             {
                 HostName = $"{id}",
@@ -117,26 +112,40 @@ namespace IvrLib
                 {
                     SubnetType = SubnetType.PUBLIC
                 },
+                PrivateIpAddress = "10.10.10.11",
                 UserData = HostPriming.PrimeForS3i(hostProps).UserData,
             };
             Host = new Instance_(this, $"CallHost", instanceProps);
+
+            //var eip = new CfnEIP(this, "IvrEIP", new CfnEIPProps { 
+            //    Domain = "vpn",
+            //    InstanceId = Host.InstanceId,
+            //});
+            //WriteLine($"EIP: lid:{eip.LogicalId}, iid:{eip.InstanceId}, pool:{eip.PublicIpv4Pool}, domain:{eip.Domain}");
 
             // Add it to our DNS           
 //            var publicZone = new PublicHostedZone(this, $"{id}_Zone", new PublicHostedZoneProps {
 //               ZoneName = "host.ivrstack-au.net",
 //                Comment = "Created by CDK for existing domain",
 //            });
-            var publicZone = HostedZone.FromLookup(this, $"{id}_Zone", new HostedZoneProviderProps{
+            var zoneHosts = HostedZone.FromLookup(this, $"{id}_Zone", new HostedZoneProviderProps{
                 DomainName = props.HostsDomainName,
             });
-            var ARecord = new ARecord(this, $"{id}_Host", new ARecordProps{
-                Zone = publicZone,
-                RecordName = $"host.{publicZone.ZoneName}",
-                Target = RecordTarget.FromIpAddresses(Host.InstancePublicIp),
+
+            var hostsPrivateAddresses = new string [] { Host.InstancePrivateIp };
+            new ARecord(this, $"{id}_HostsPrivate", new ARecordProps {
+                Zone = zoneHosts,
+                RecordName = $"private.{zoneHosts.ZoneName}",
+                Target = RecordTarget.FromIpAddresses(hostsPrivateAddresses),
                 Ttl = Duration.Seconds(300),
             });
 
-            //Console.WriteLine($"Instance PublicIP: {Host.InstancePublicIp}, {ARecord.DomainName}");
+            new ARecord(this, $"{id}_Host_{instanceProps.PrivateIpAddress.Replace('.', '_')}", new ARecordProps {
+                Zone = zoneHosts,
+                RecordName = $"{instanceProps.PrivateIpAddress.Replace('.', '_')}.{zoneHosts.ZoneName}",
+                Target = RecordTarget.FromIpAddresses(Host.InstancePublicIp),
+                Ttl = Duration.Seconds(300),
+            });
         }
     }
 }
