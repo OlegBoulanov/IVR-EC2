@@ -9,6 +9,7 @@ using Amazon.CDK;
 using Amazon.CDK.AWS.EC2;
 using Amazon.CDK.AWS.IAM;
 using Amazon.CDK.AWS.Route53;
+//using Amazon.CDK.AWS.Route53;
 using Amazon.CDK.AWS.SNS;
 using Amazon.CDK.AWS.SNS.Subscriptions;
 using Amazon.CDK.AWS.SQS;
@@ -24,50 +25,21 @@ namespace IvrLib
             // We'll start with brand new VPC
             this.Vpc = new Vpc(this, $"Public", new VpcProps
             {
-                Cidr = "10.10.10.0/24",
+                Cidr = "10.0.0.0/20",
                 MaxAzs = 2,
                 SubnetConfiguration = new SubnetConfiguration[] {
                     new SubnetConfiguration {
                         Name = "Public",
                         SubnetType = SubnetType.PUBLIC,
-                        CidrMask = 26
-                    }
+                        CidrMask = 24
+                    },
                 }
             });
 
-            // Role is needed for allowing tools to use EC2 provided credentials
-            // see https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-role.html
             var role = new Role(this, "Role_CallHost", new RoleProps
             {
                 AssumedBy = new ServicePrincipal("ec2.amazonaws.com"),
-                InlinePolicies = new Dictionary<string, PolicyDocument> {
-                    { "IvrPolicy", new PolicyDocument(new PolicyDocumentProps {
-                        Statements = new PolicyStatement[] {
-                            new PolicyStatement().Allow().WithActions("sts:AssumeRole")
-                                .WithResources($"arn:aws:iam::{props.Env.Account}:role/IvrStack*"), 
-                            new PolicyStatement().Allow().WithActions("s3:GetBucketLocation")
-                                .WithResources(),
-                            new PolicyStatement().Allow().WithActions("s3:ListBucket")
-                                .WithResources(props.S3BucketResources("apps", "config", "install", "prompts", "prompts.update", "tools", "userjobs")),
-                            new PolicyStatement().Allow().WithActions("s3:GetObject")
-                                .WithResources(props.S3ObjectResources("apps", "config", "install", "logs", "prompts", "prompts.update", "sessions", "segments", "tools", "userjobs")),
-                            new PolicyStatement().Allow().WithActions("s3:PutObject")
-                                .WithResources(props.S3ObjectResources("logs", "sessions", "segments", "tools")),
-                            new PolicyStatement().Allow().WithActions("s3:DeleteObject")
-                                .WithResources(props.S3ObjectResources("userjobs")),
-                            new PolicyStatement().Allow().WithActions("sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:GetQueueUrl", "sqs:ReceiveMessage", "sqs:SendMessage")
-                                .WithResources(),
-                            new PolicyStatement().Allow().WithActions("cloudwatch:GetMetricData", "cloudwatch:GetMetricStatistics", "cloudwatch:ListMetrics", "cloudwatch:PutMetricData")
-                                .WithResources(),
-                            new PolicyStatement().Allow().WithActions("sns:Publish")
-                                .WithResources(),
-                            new PolicyStatement().Allow().WithActions("ses:SendEmail")
-                                .WithResources(),
-                            new PolicyStatement().Allow().WithActions("events:PutEvents")
-                                .WithResources(),                          
-                        },
-                    })}
-                },
+                InlinePolicies = new IvrInlinePolicies(props),
             });
             
             // Configure inbound security for RDP (and more?)
@@ -112,40 +84,58 @@ namespace IvrLib
                 {
                     SubnetType = SubnetType.PUBLIC
                 },
-                PrivateIpAddress = "10.10.10.11",
+                PrivateIpAddress = "10.0.0.4",
                 UserData = HostPriming.PrimeForS3i(hostProps).UserData,
             };
             Host = new Instance_(this, $"CallHost", instanceProps);
 
-            //var eip = new CfnEIP(this, "IvrEIP", new CfnEIPProps { 
-            //    Domain = "vpn",
-            //    InstanceId = Host.InstanceId,
-            //});
-            //WriteLine($"EIP: lid:{eip.LogicalId}, iid:{eip.InstanceId}, pool:{eip.PublicIpv4Pool}, domain:{eip.Domain}");
+            var eip = new CfnEIP(this, "IvrEIP", new CfnEIPProps { 
+                Domain = "vpn",
+                InstanceId = Host.InstanceId,
+            });
+            WriteLine($"EIP: lid:{eip.LogicalId}, iid:{eip.InstanceId}, pool:{eip.PublicIpv4Pool}, domain:{eip.Domain}");
 
-            // Add it to our DNS           
+//            // Add it to our DNS           
 //            var publicZone = new PublicHostedZone(this, $"{id}_Zone", new PublicHostedZoneProps {
 //               ZoneName = "host.ivrstack-au.net",
 //                Comment = "Created by CDK for existing domain",
 //            });
-            var zoneHosts = HostedZone.FromLookup(this, $"{id}_Zone", new HostedZoneProviderProps{
+
+            var theZone = HostedZone.FromLookup(this, $"{id}_Zone", new HostedZoneProviderProps {
                 DomainName = props.HostsDomainName,
             });
 
-            var hostsPrivateAddresses = new string [] { Host.InstancePrivateIp };
+            // register the EIP... but HOW???
+            new ARecord(this, $"{id}_Host_{instanceProps.PrivateIpAddress.Replace('.', '_')}", new ARecordProps {
+                Zone = theZone,
+                RecordName = $"trunk.{theZone.ZoneName}",
+                Target = RecordTarget.FromIpAddresses(Host.InstancePublicIp),   // HOW ??
+                Ttl = Duration.Seconds(300),
+            });
+/*
+            // register Trunk private IP
             new ARecord(this, $"{id}_HostsPrivate", new ARecordProps {
-                Zone = zoneHosts,
-                RecordName = $"private.{zoneHosts.ZoneName}",
-                Target = RecordTarget.FromIpAddresses(hostsPrivateAddresses),
+                Zone = theZone,
+                RecordName = $"trunk.{theZone.ZoneName}",
+                Target = RecordTarget.FromIpAddresses(Host.InstancePrivateIp),
                 Ttl = Duration.Seconds(300),
             });
 
+            // register public IP
             new ARecord(this, $"{id}_Host_{instanceProps.PrivateIpAddress.Replace('.', '_')}", new ARecordProps {
-                Zone = zoneHosts,
-                RecordName = $"{instanceProps.PrivateIpAddress.Replace('.', '_')}.{zoneHosts.ZoneName}",
+                Zone = theZone,
+                RecordName = $"{hostProps.HostName}.{theZone.ZoneName}",
                 Target = RecordTarget.FromIpAddresses(Host.InstancePublicIp),
                 Ttl = Duration.Seconds(300),
             });
+            // register public IP for SIP DNS LB
+            new ARecord(this, $"{id}_SIP_{instanceProps.PrivateIpAddress.Replace('.', '_')}", new ARecordProps {
+                Zone = theZone,
+                RecordName = $"sip.{theZone.ZoneName}",
+                Target = RecordTarget.FromIpAddresses(Host.InstancePublicIp),
+                Ttl = Duration.Seconds(300),
+            });
+*/
         }
     }
 }
