@@ -7,7 +7,7 @@ namespace IvrLib
     {
         public static WindowsCommands PrimeForS3i(HostPrimingProps props)
         {
-            var workingFolder = $"C:\\ProgramData\\{props.HostName}";
+            var workingFolder = $"C:\\ProgramData\\{props.WorkingFolder}";
             var explorerSettingsPath = $"{workingFolder}\\explorer_settings.reg";
             var commandsToRun = new WindowsCommands()
                 // working folder and log file
@@ -56,12 +56,12 @@ namespace IvrLib
 // $timeout=8; $timer=[Diagnostics.StopWatch]::StartNew();while(($timer.Elapsed.TotalSeconds -lt $timeout)) { Start-Sleep -Seconds 1; Write-Host $timer.Elapsed.TotalSeconds };$timer.Stop();
 
             // final touches and reboot
-            commandsToRun
-                .WithDisableUAC(restartComputer: false)
-                .WithCommands($"Rename-Computer {props.HostName}")
-                // anything else to do - before restarting?
-                .WithRestart(); // ...reboot to complete fixing UAC/renaming...
-
+            commandsToRun.WithDisableUAC(restartComputer: false);
+            if(!string.IsNullOrWhiteSpace(props.HostName)) {
+                commandsToRun.WithCommands($"Rename-Computer {props.HostName} -Force");
+            }
+            // anything else to do - before restarting?
+            commandsToRun.WithRestart(); // ...reboot to complete fixing UAC/renaming...
             return commandsToRun;
         }
     }

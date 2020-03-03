@@ -7,6 +7,8 @@ using Amazon.CDK;
 using Amazon.CDK.AWS.EC2;
 using Amazon.CDK.RegionInfo;
 
+using YamlDotNet.Serialization;
+
 using IvrLib;
 
 namespace Ivr
@@ -67,6 +69,8 @@ namespace Ivr
             };
             new IvrStack(app, "IvrStack", ivrStackProps);
 
+            //var yaml = new SerializerBuilder().Build().Serialize(ivrStackProps);
+            //Console.WriteLine(yaml);
             app.Synth();
         }
     }

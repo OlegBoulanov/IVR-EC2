@@ -33,6 +33,10 @@ namespace IvrLibTests
             var invalidFileChars = "\"<>" + invalidPathChars + ":*?\\/";
             Assert.AreEqual(invalidPathChars, new string(Path.GetInvalidPathChars()));
             Assert.AreEqual(invalidFileChars, new string(Path.GetInvalidFileNameChars()));
+
+            Assert.AreEqual("Host_10_0_0_4", $"Host_10.0.0.4".AsCloudFormationId());
+            Assert.AreEqual("Host_10.0.0.4", $"Host_10.0.0.4".AsWindowsFolder());
+            Assert.AreEqual("Host-10-0-0-4", $"Host_10.0.0.4".AsWindowsComputerName());
         }
 
     }

@@ -7,6 +7,7 @@ namespace IvrLib
     public class HostPrimingProps
     {
         public string HostName { get; set; }
+        public string WorkingFolder { get; set; } = "CDK_Stack";
         public string AwsAccount { get; set; }
         public string AwsRoleName { get; set; }
         public string RdpUserName { get; set; }
