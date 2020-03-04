@@ -80,7 +80,7 @@ namespace IvrLib
                     instanceProps.KeyName = stackProps.KeyPairName;
                     instanceProps.UserData = HostPriming.PrimeForS3i(hostPrimingProps).UserData;
 
-                    hosts.Add(new Instance_(this, $"Host_{instanceProps.PrivateIpAddress}".AsCloudFormationId(), instanceProps));
+                    hosts.Add(new Instance_(this, $"Host_{subnetIndex}_{hostNumber}".AsCloudFormationId(), instanceProps));
                 }
             }
             // assign elastic IP to each host
