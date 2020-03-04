@@ -58,17 +58,14 @@ namespace IvrLib
 
             // Finally - create our instances!
             var hosts = new List<Instance_>();
-            var subnetIpFormats = new string[] { "10.0.0.{0}", "10.0.1.{0}" };
-            for(var subnetIndex = 0; subnetIndex < subnetIpFormats.Length; ++subnetIndex)
+            for(var subnetIndex = 0; subnetIndex < Vpc.PublicSubnets.Length; ++subnetIndex)
             {
-                var subnetIpFormat = subnetIpFormats[subnetIndex];
                 for (var subnetIpIndex = 0; subnetIpIndex < Math.Min(2, 251); ++subnetIpIndex)
                 {
-                    var privateIpAddress = string.Format(subnetIpFormat, 4 + subnetIpIndex);
-                    var instanceProps = IvrInstanceProps.InstanceProps(Vpc, Vpc.PublicSubnets[subnetIndex], role, securityGroup, privateIpAddress);
+                    var instanceProps = IvrInstanceProps.InstanceProps(Vpc, Vpc.PublicSubnets[subnetIndex], role, securityGroup, privateIpAddress: null);
                     var hostPrimingProps = new HostPrimingProps
                     {
-                        HostName = $"CH-{privateIpAddress.Substring(5)}".AsWindowsComputerName(),   // must fit into 15 chars
+                        HostName = $"CH-{subnetIndex}{subnetIpIndex:00}".AsWindowsComputerName(),   // must fit into 15 chars
                         WorkingFolder = $"{stackId}".AsWindowsFolder(),
                         AwsAccount = stackProps.Env.Account,
                         AwsRoleName = role.RoleName,
@@ -92,12 +89,20 @@ namespace IvrLib
                     InstanceId = h.InstanceId,
                 });
             });
-            // and register them all at once
-            var ar = new ARecord(this, $"AR53".AsCloudFormationId(), new ARecordProps
+            // register public EIPs
+            var arPublic = new ARecord(this, $"ARecord_Public_".AsCloudFormationId(), new ARecordProps
+            {
+                Zone = theZone,
+                RecordName = $"eips.{theZone.ZoneName}",
+                Target = RecordTarget.FromValues(eips.Select(eip => eip.Ref).ToArray()),
+                Ttl = Duration.Seconds(300),
+            });
+            // and private hosts
+            var arPrivate = new ARecord(this, $"ARecord_Private_".AsCloudFormationId(), new ARecordProps
             {
                 Zone = theZone,
                 RecordName = $"hosts.{theZone.ZoneName}",
-                Target = RecordTarget.FromValues(eips.Select(eip => eip.Ref).ToArray()),
+                Target = RecordTarget.FromIpAddresses(hosts.Select(h => h.InstancePrivateIp).ToArray()),
                 Ttl = Duration.Seconds(300),
             });
         }
