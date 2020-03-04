@@ -18,25 +18,11 @@ namespace IvrLib
 {
     public class IvrStack : Stack
     {
-        public IVpc Vpc { get; protected set; }
-        public Instance_ Host { get; protected set; }
+        public IvrVpc Vpc { get; protected set; }
         public IvrStack(Construct scope, string stackId, IvrStackProps stackProps = null) : base(scope, stackId, stackProps)
         {
             // We'll start with brand new VPC
-            this.Vpc = new Vpc(this, $"VPC", new VpcProps
-            {
-                Cidr = "10.0.0.0/16",
-                EnableDnsHostnames = false,
-                EnableDnsSupport = true,
-                MaxAzs = 2,
-                SubnetConfiguration = new SubnetConfiguration[] {
-                    new SubnetConfiguration {
-                        Name = "Public",
-                        SubnetType = SubnetType.PUBLIC,
-                        CidrMask = 24,
-                    },
-                }
-            });
+            Vpc = new IvrVpc(this, $"OneAndOnly");
 
             var role = new Role(this, "Role_CallHost", new RoleProps
             {
@@ -52,7 +38,23 @@ namespace IvrLib
             });
             stackProps.SecurityGroupRules.ForEach(rule => securityGroup.WithSecurityGroupRule(rule));
 
+            // We have props.HostsDomainName registered in advance
+
+            // Create new Route53 zone           
+            //var theZone = new PublicHostedZone(this, $"{stackId}_Zone", new PublicHostedZoneProps
+            //{
+            //    ZoneName = stackProps.HostsDomainName,
+            //    Comment = "Created by CDK for existing domain",
+            //});
+            // or select existing created by registrar
+            var theZone = HostedZone.FromLookup(this, $"{stackId}_Zone", new HostedZoneProviderProps
+            {
+                DomainName = stackProps.HostsDomainName,
+                //Comment = "HostedZone created by Route53 Registrar",
+            });
+
             // Finally - create our instances!
+            var hosts = new List<Instance_>();
             var subnetIpFormats = new string[] { "10.0.0.{0}", "10.0.1.{0}" };
             for(var subnetIndex = 0; subnetIndex < subnetIpFormats.Length; ++subnetIndex)
             {
@@ -75,58 +77,26 @@ namespace IvrLib
                     };
                     instanceProps.KeyName = stackProps.KeyPairName;
                     instanceProps.UserData = HostPriming.PrimeForS3i(hostPrimingProps).UserData;
-                    Host = new Instance_(this, $"Host_{instanceProps.PrivateIpAddress}".AsCloudFormationId(), instanceProps);
 
-                    var eip = new CfnEIP(this, $"EIP_{instanceProps.PrivateIpAddress}".AsCloudFormationId(), new CfnEIPProps
-                    {
-                        Domain = "vpn",
-                        InstanceId = Host.InstanceId,
-                    });
-                    WriteLine($"EIP: lid:{eip.LogicalId}, iid:{eip.InstanceId}, pool:{eip.PublicIpv4Pool}, domain:{eip.Domain}");
+                    hosts.Add(new Instance_(this, $"Host_{instanceProps.PrivateIpAddress}".AsCloudFormationId(), instanceProps));
                 }
             }
-
-            //            // Add it to our DNS           
-            //            var publicZone = new PublicHostedZone(this, $"{id}_Zone", new PublicHostedZoneProps {
-            //               ZoneName = "host.ivrstack-au.net",
-            //                Comment = "Created by CDK for existing domain",
-            //            });
-            /*
-                        var theZone = HostedZone.FromLookup(this, $"{id}_Zone", new HostedZoneProviderProps {
-                            DomainName = props.HostsDomainName,
-                        });
-
-                        // register the EIP... but HOW???
-                        new ARecord(this, $"{id}_Host_{instanceProps.PrivateIpAddress.Replace('.', '_')}", new ARecordProps {
-                            Zone = theZone,
-                            RecordName = $"trunk.{theZone.ZoneName}",
-                            Target = RecordTarget.FromIpAddresses(Host.InstancePublicIp),   // HOW ??
-                            Ttl = Duration.Seconds(300),
-                        });
-
-                        // register Trunk private IP
-                        new ARecord(this, $"{id}_HostsPrivate", new ARecordProps {
-                            Zone = theZone,
-                            RecordName = $"trunk.{theZone.ZoneName}",
-                            Target = RecordTarget.FromIpAddresses(Host.InstancePrivateIp),
-                            Ttl = Duration.Seconds(300),
-                        });
-
-                        // register public IP
-                        new ARecord(this, $"{id}_Host_{instanceProps.PrivateIpAddress.Replace('.', '_')}", new ARecordProps {
-                            Zone = theZone,
-                            RecordName = $"{hostProps.HostName}.{theZone.ZoneName}",
-                            Target = RecordTarget.FromIpAddresses(Host.InstancePublicIp),
-                            Ttl = Duration.Seconds(300),
-                        });
-                        // register public IP for SIP DNS LB
-                        new ARecord(this, $"{id}_SIP_{instanceProps.PrivateIpAddress.Replace('.', '_')}", new ARecordProps {
-                            Zone = theZone,
-                            RecordName = $"sip.{theZone.ZoneName}",
-                            Target = RecordTarget.FromIpAddresses(Host.InstancePublicIp),
-                            Ttl = Duration.Seconds(300),
-                        });
-            */
+            // assign elastic IP to each host
+            var eips = hosts.Select(h => {
+                return new CfnEIP(this, $"EIP_{h.InstancePrivateIp}".AsCloudFormationId(), new CfnEIPProps
+                {
+                    Domain = "vpn",
+                    InstanceId = h.InstanceId,
+                });
+            });
+            // and register them all at once
+            var ar = new ARecord(this, $"AR53".AsCloudFormationId(), new ARecordProps
+            {
+                Zone = theZone,
+                RecordName = $"hosts.{theZone.ZoneName}",
+                Target = RecordTarget.FromValues(eips.Select(eip => eip.Ref).ToArray()),
+                Ttl = Duration.Seconds(300),
+            });
         }
     }
 }

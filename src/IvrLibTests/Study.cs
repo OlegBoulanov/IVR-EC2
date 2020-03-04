@@ -4,6 +4,10 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+
+using YamlDotNet;
+using YamlDotNet.Serialization;
+
 using NUnit.Framework;
 
 using IvrLib;
@@ -38,6 +42,17 @@ namespace IvrLibTests
             Assert.AreEqual("Host_10.0.0.4", $"Host_10.0.0.4".AsWindowsFolder());
             Assert.AreEqual("Host-10-0-0-4", $"Host_10.0.0.4".AsWindowsComputerName());
         }
-
+        [Test]
+        public void YamlTest()
+        {
+            var ys = new SerializerBuilder().Build();
+            var s = ys.Serialize(new { Field1 = "one", Field2 = "two",  });
+            Console.WriteLine(s);
+            Assert.AreEqual($"Field1: one{Environment.NewLine}Field2: two{Environment.NewLine}", s);
+            var x = new { Name = "None", Count = 4, };
+            s = ys.Serialize(new { Field1 = "one", Field2 = "two", Az1 = x, Az2 = x, });
+            Console.WriteLine(s);
+            Assert.AreEqual($"Field1: one{Environment.NewLine}Field2: two{Environment.NewLine}Az1: &o0{Environment.NewLine}  Name: None{Environment.NewLine}  Count: 4{Environment.NewLine}Az2: *o0{Environment.NewLine}", s);
+        }
     }
 }
