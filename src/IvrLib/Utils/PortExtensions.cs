@@ -4,7 +4,7 @@ using System.Linq;
 
 using Amazon.CDK.AWS.EC2;
 
-namespace IvrLib
+namespace IvrLib.Utils
 {
     public static class PortExtensions
     {

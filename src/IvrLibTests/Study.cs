@@ -10,7 +10,7 @@ using YamlDotNet.Serialization;
 
 using NUnit.Framework;
 
-using IvrLib;
+using IvrLib.Utils;
 
 namespace IvrLibTests
 {

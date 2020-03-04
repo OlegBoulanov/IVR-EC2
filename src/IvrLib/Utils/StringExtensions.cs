@@ -4,7 +4,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace IvrLib
+namespace IvrLib.Utils
 {
     public static class StringExtensions
     {

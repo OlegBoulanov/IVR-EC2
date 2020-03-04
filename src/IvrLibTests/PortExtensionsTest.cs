@@ -6,7 +6,7 @@ using NUnit.Framework;
 
 using Amazon.CDK.AWS.EC2;
 
-using IvrLib;
+using IvrLib.Utils;
 
 namespace IvrLibTests
 {

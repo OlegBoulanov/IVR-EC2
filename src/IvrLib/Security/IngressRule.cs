@@ -8,7 +8,7 @@ using System.Linq;
 using Amazon.CDK;
 using Amazon.CDK.AWS.EC2;
 
-namespace IvrLib
+namespace IvrLib.Security
 {
     public class IngressRule : SecurityGroupRule
     {

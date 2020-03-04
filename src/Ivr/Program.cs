@@ -10,6 +10,9 @@ using Amazon.CDK.RegionInfo;
 using YamlDotNet.Serialization;
 
 using IvrLib;
+using IvrLib.Security;
+using IvrLib.SipProviders;
+using IvrLib.Utils;
 
 namespace Ivr
 {

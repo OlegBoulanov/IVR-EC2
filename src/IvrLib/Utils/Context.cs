@@ -7,7 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Linq;
 
-namespace IvrLib
+namespace IvrLib.Utils
 {
     public class Context : Dictionary<string, string>
     {

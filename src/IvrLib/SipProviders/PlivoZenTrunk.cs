@@ -5,7 +5,9 @@ using System.Linq;
 
 using Amazon.CDK.AWS.EC2;
 
-namespace IvrLib
+using IvrLib.Security;
+
+namespace IvrLib.SipProviders
 {
     public class PlivoZenTrunk : SipProvider
     {

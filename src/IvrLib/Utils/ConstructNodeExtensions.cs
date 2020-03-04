@@ -14,7 +14,7 @@ using Amazon.JSII.Runtime.Deputy;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace IvrLib
+namespace IvrLib.Utils
 {
     public static class ConstructNodeExtensions
     {

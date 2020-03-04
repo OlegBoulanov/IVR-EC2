@@ -3,7 +3,7 @@ using System;
 using System.Runtime.InteropServices;
 using NUnit.Framework;
 
-using IvrLib;
+using IvrLib.Utils;
 
 namespace IvrLibTests
 {

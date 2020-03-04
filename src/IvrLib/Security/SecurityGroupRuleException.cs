@@ -1,6 +1,6 @@
 using System;
 
-namespace IvrLib
+namespace IvrLib.Security
 {
     public class SecurityGroupRuleException : ApplicationException
     {

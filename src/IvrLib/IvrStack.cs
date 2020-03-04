@@ -14,6 +14,9 @@ using Amazon.CDK.AWS.SNS;
 using Amazon.CDK.AWS.SNS.Subscriptions;
 using Amazon.CDK.AWS.SQS;
 
+using IvrLib.Security;
+using IvrLib.Utils;
+
 namespace IvrLib
 {
     public class IvrStack : Stack

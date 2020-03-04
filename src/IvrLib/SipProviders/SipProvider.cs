@@ -4,7 +4,10 @@ using System.Linq;
 
 using Amazon.CDK.AWS.EC2;
 
-namespace IvrLib
+using IvrLib.Security;
+using IvrLib.Utils;
+
+namespace IvrLib.SipProviders
 {
     public class SipProvider
     {

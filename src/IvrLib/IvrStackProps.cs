@@ -8,6 +8,9 @@ using System.Linq;
 using Amazon.CDK;
 using Amazon.CDK.RegionInfo;
 
+using IvrLib.Security;
+using IvrLib.Utils;
+
 namespace IvrLib
 {
     public class IvrStackProps : StackProps
