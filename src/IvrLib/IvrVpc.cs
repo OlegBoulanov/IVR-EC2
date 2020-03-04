@@ -23,9 +23,7 @@ namespace IvrLib
                     CidrMask = 24,
                 },
             }
-        })
-        {
-        
-        }
+        }) {}
+        public int MaxIpsPerSubnet { get; set; } = 251;
     }
 }

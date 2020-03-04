@@ -25,16 +25,16 @@ namespace IvrLib
         public IvrStack(Construct scope, string stackId, IvrStackProps stackProps = null) : base(scope, stackId, stackProps)
         {
             // We'll start with brand new VPC
-            Vpc = new IvrVpc(this, $"OneAndOnly");
+            Vpc = new IvrVpc(this, $"OneAndOnly_");
 
-            var role = new Role(this, "Role_CallHost", new RoleProps
+            var iamRole = new Role(this, "Role_CallHost_", new RoleProps
             {
                 AssumedBy = new ServicePrincipal("ec2.amazonaws.com"),
                 InlinePolicies = new IvrInlinePolicies(stackProps),
             });
 
             // Configure inbound security for RDP (and more?)
-            var securityGroup = new SecurityGroup(this, $"Ingress", new SecurityGroupProps
+            var securityGroup = new SecurityGroup(this, $"Ingress_", new SecurityGroupProps
             {
                 Vpc = Vpc,
                 AllowAllOutbound = stackProps.AllowAllOutbound,
@@ -50,25 +50,27 @@ namespace IvrLib
             //    Comment = "Created by CDK for existing domain",
             //});
             // or select existing created by registrar
-            var theZone = HostedZone.FromLookup(this, $"{stackId}_Zone", new HostedZoneProviderProps
+            var theZone = HostedZone.FromLookup(this, $"{stackId}_Zone_", new HostedZoneProviderProps
             {
                 DomainName = stackProps.HostsDomainName,
                 //Comment = "HostedZone created by Route53 Registrar",
             });
 
+            var hostsPerSubnet = 2; // define properly !!!
+
             // Finally - create our instances!
             var hosts = new List<Instance_>();
             for(var subnetIndex = 0; subnetIndex < Vpc.PublicSubnets.Length; ++subnetIndex)
             {
-                for (var subnetIpIndex = 0; subnetIpIndex < Math.Min(2, 251); ++subnetIpIndex)
+                for (var hostNumber = 0; hostNumber < Math.Min(hostsPerSubnet, Vpc.MaxIpsPerSubnet); ++hostNumber)
                 {
-                    var instanceProps = IvrInstanceProps.InstanceProps(Vpc, Vpc.PublicSubnets[subnetIndex], role, securityGroup, privateIpAddress: null);
+                    var instanceProps = IvrInstanceProps.InstanceProps(Vpc, Vpc.PublicSubnets[subnetIndex], iamRole, securityGroup, privateIpAddress: null);
                     var hostPrimingProps = new HostPrimingProps
                     {
-                        HostName = $"CH-{subnetIndex}{subnetIpIndex:00}".AsWindowsComputerName(),   // must fit into 15 chars
-                        WorkingFolder = $"{stackId}".AsWindowsFolder(),
+                        HostName = $"CH-{subnetIndex}{hostNumber:00}".AsWindowsComputerName(),   // must fit into 15 chars
+                        WorkingFolder = $"CDK-{stackId}".AsWindowsFolder(),
                         AwsAccount = stackProps.Env.Account,
-                        AwsRoleName = role.RoleName,
+                        AwsRoleName = iamRole.RoleName,
                         RdpUserName = stackProps.RdpUserName,
                         RdpUserPassword = stackProps.RdpUserPassword,
                         RdpUserGroups = stackProps.RdpUserGroups,
@@ -83,7 +85,7 @@ namespace IvrLib
             }
             // assign elastic IP to each host
             var eips = hosts.Select(h => {
-                return new CfnEIP(this, $"EIP_{h.InstancePrivateIp}".AsCloudFormationId(), new CfnEIPProps
+                return new CfnEIP(this, $"EIP_{h.InstancePrivateIp}_".AsCloudFormationId(), new CfnEIPProps
                 {
                     Domain = "vpn",
                     InstanceId = h.InstanceId,
