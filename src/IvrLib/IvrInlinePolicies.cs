@@ -18,6 +18,8 @@ namespace IvrLib
                     // see https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-role.html
                     new PolicyStatement().Allow().WithActions("sts:AssumeRole")
                         .WithResources($"arn:aws:iam::{props.Env.Account}:role/IvrStack*"),
+                    new PolicyStatement().Allow().WithActions("ec2:StartInstances", "ec2:StopInstances", "ec2:DescribeInstances")
+                        .WithResources(),
                     new PolicyStatement().Allow().WithActions("s3:GetBucketLocation")
                         .WithResources(),
                     new PolicyStatement().Allow().WithActions("s3:ListBucket")
