@@ -25,7 +25,7 @@ namespace IvrLib
         public IvrStack(Construct scope, string stackId, IvrStackProps stackProps = null) : base(scope, stackId, stackProps)
         {
             // We'll start with brand new VPC
-            Vpc = new IvrVpc(this, $"OneAndOnly_");
+            Vpc = new IvrVpc(this, $"OneAndOnly_", new IvrVpcProps {});
 
             var iamRole = new Role(this, "Role_CallHost_", new RoleProps
             {
@@ -62,7 +62,7 @@ namespace IvrLib
             var hosts = new List<Instance_>();
             for(var subnetIndex = 0; subnetIndex < Vpc.PublicSubnets.Length; ++subnetIndex)
             {
-                for (var hostNumber = 0; hostNumber < Math.Min(hostsPerSubnet, Vpc.MaxIpsPerSubnet); ++hostNumber)
+                for (var hostNumber = 0; hostNumber < Math.Min(hostsPerSubnet, IvrVpcProps.MaxIpsPerSubnet); ++hostNumber)
                 {
                     var instanceProps = IvrInstanceProps.InstanceProps(Vpc, Vpc.PublicSubnets[subnetIndex], iamRole, securityGroup, privateIpAddress: null);
                     var hostPrimingProps = new HostPrimingProps

@@ -9,21 +9,20 @@ namespace IvrLib
 {
     public class IvrVpc : Vpc
     {
-        public IvrVpc(Construct scope, string id)
+        public IvrVpc(Construct scope, string id, IvrVpcProps props)
         : base(scope, id, new VpcProps {
-            Cidr = "10.0.0.0/16",
+            Cidr = $"{props.VpcCidrAddr}/{props.VpcCidrMask}",
+            MaxAzs = props.MaxAzs,
             EnableDnsHostnames = false,
             EnableDnsSupport = true,
-            MaxAzs = 2,
             SubnetConfiguration = new SubnetConfiguration[]
             {
                    new SubnetConfiguration {
                     Name = "Public",
                     SubnetType = SubnetType.PUBLIC,
-                    CidrMask = 24,
+                    CidrMask = props.SubnetCidrMask,
                 },
             }
         }) {}
-        public int MaxIpsPerSubnet { get; set; } = 251;
     }
 }
