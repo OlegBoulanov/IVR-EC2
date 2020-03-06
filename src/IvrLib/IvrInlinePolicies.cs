@@ -10,14 +10,14 @@ namespace IvrLib
 {
     public class IvrInlinePolicies : Dictionary<string, PolicyDocument>
     {
-        public IvrInlinePolicies(IvrStackProps props)
+        public IvrInlinePolicies(string stackId, IvrStackProps props)
         {
             Add("IvrPolicy", new PolicyDocument(new PolicyDocumentProps {
                 Statements = new PolicyStatement[] {
                     // Role is needed for allowing tools to use EC2 provided credentials
                     // see https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-role.html
                     new PolicyStatement().Allow().WithActions("sts:AssumeRole")
-                        .WithResources($"arn:aws:iam::{props.Env.Account}:role/IvrStack*"),
+                        .WithResources($"arn:aws:iam::{props.Env.Account}:role/{stackId}*"),    // allow roles defined in this stack
                     new PolicyStatement().Allow().WithActions("ec2:StartInstances", "ec2:StopInstances", "ec2:DescribeInstances")
                         .WithResources(),
                     new PolicyStatement().Allow().WithActions("s3:GetBucketLocation")

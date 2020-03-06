@@ -30,7 +30,7 @@ namespace IvrLib
             var iamRole = new Role(this, "Role_CallHost_", new RoleProps
             {
                 AssumedBy = new ServicePrincipal("ec2.amazonaws.com"),
-                InlinePolicies = new IvrInlinePolicies(stackProps),
+                InlinePolicies = new IvrInlinePolicies(stackId, stackProps),
             });
 
             // Configure inbound security for RDP (and more?)
