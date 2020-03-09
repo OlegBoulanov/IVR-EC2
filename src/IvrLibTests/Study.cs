@@ -10,6 +10,7 @@ using YamlDotNet.Serialization;
 
 using NUnit.Framework;
 
+using IvrLib;
 using IvrLib.Utils;
 
 namespace IvrLibTests
@@ -53,6 +54,43 @@ namespace IvrLibTests
             s = ys.Serialize(new { Field1 = "one", Field2 = "two", Az1 = x, Az2 = x, });
             Console.WriteLine(s);
             Assert.AreEqual($"Field1: one{Environment.NewLine}Field2: two{Environment.NewLine}Az1: &o0{Environment.NewLine}  Name: None{Environment.NewLine}  Count: 4{Environment.NewLine}Az2: *o0{Environment.NewLine}", s);
+
+            var site = new IvrSiteSchema {
+                Domain = "my.site.domain.net",
+                InstallFrom = "https://raw.githubusercontent.com/OlegBoulanov/s3i/",
+                MaxAzs = 2,
+                SipProviders = new List<string> { "Twilio", },
+                IngressPorts = new List<PortSpec> { PortSpec.Parse("SIP 5060"), PortSpec.Parse("RTP 5064-6000"), },
+                RdpUserName = "RdpUser",
+                RdpPassword = "P4$$word!",
+                HostGroups = new List<HostGroup> {
+                    new HostGroup {
+                        GroupName = "Mixed/Public",
+                        UseElasticIP = true,
+                        Subdomains = new List<string> { "sip", "workers", },
+                        HostCount = 2,
+                        InstallFrom = "develop/Examples/Config.ini",
+                    },
+                    new HostGroup {
+                        GroupName = "Workers/Private",
+                        UseElasticIP = false,
+                        Subdomains = new List<string> { "workers", },
+                        HostCount = 16,
+                        InstallFrom = "develop/Examples/Config.ini",
+                    },
+                },
+            };
+            s = ys.Serialize(site);
+            Console.WriteLine(s);
+            var yd = new YamlDotNet.Serialization.DeserializerBuilder().Build();
+            var site2 = yd.Deserialize<IvrSiteSchema>(s);
+            Assert.AreEqual(2, site2.HostGroups.Count());
+
+            Console.WriteLine("******");
+            using(var sr = new StreamReader($"{OSAgnostic.Home}/Projects/CdkTest-1.yaml")) {
+                var site1 = yd.Deserialize<IvrSiteSchema>(sr.ReadToEnd());
+                Console.WriteLine(ys.Serialize(site1));
+            }
         }
     }
 }

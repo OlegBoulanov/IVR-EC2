@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,12 +27,31 @@ namespace Ivr
             // can't rely on (incorrect) CDK implementation, so read these files one by one, values from previous may be overridden by those from next
             var ctx = Context.FromJsonFiles($"{OSAgnostic.Home}/cdk.json", $"cdk.json", app.Node.TryGetContext("ctx") as string);
 
+            // Mandatory parameters are not a part of the schema
             var accountNumber = app.Node.Resolve(ctx, "account", "CDK_DEFAULT_ACCOUNT");
+            if(string.IsNullOrWhiteSpace(accountNumber)) throw new ArgumentException($"No account number provided");
             var regionName = app.Node.Resolve(ctx, "region", "CDK_DEFAULT_REGION");
             var regionInfo = RegionInfo.Get(regionName);
-            if(null == regionInfo || null == regionInfo.DomainSuffix) throw new ApplicationException($"Invalid region: '{regionName}'");
+            if(null == regionInfo || null == regionInfo.DomainSuffix) throw new ArgumentException($"Invalid region: '{regionName}'");
 
             System.Console.WriteLine($"{accountNumber}/{regionInfo.Name}, {regionInfo.DomainSuffix}");
+
+            // Site Schema itself
+            var schemaFileName = app.Node.Resolve(ctx, "schema");   // help: "Schema file required");
+            if (!string.IsNullOrWhiteSpace(schemaFileName)) {
+                Console.WriteLine($"Schema [{schemaFileName}]");
+                using (var sr = new StreamReader(schemaFileName)) {
+                    var ext = Path.GetExtension(schemaFileName).ToLower();
+                    if (".yaml" == ext) {
+                        var schema = new YamlDotNet.Serialization.DeserializerBuilder().Build().Deserialize<IvrSiteSchema>(sr.ReadToEnd());
+                        Console.WriteLine(new SerializerBuilder().Build().Serialize(schema));
+                        schema.Validate();
+                    } else {
+                        throw new ArgumentException($"Handling of *{ext} format is not implemented (yet)");
+                    }
+                    throw new ApplicationException("The rest is not implemented yet");
+                }
+            }
 
             var rdpCIDRs = app.Node.Resolve(ctx, "RdpCIDRs", help: "expected as comma-separated list of IPv4 CIDRs, like '73.118.72.189/32, 54.203.115.236/32'").Csv();
             
@@ -48,8 +68,8 @@ namespace Ivr
                 .Csv()
                 .Select(s => PortSpec.Parse(s));
 
-            var udpIngressRules = SipProviders.Select(regionInfo.Name, app.Node.Resolve(ctx, "SipProviders")?.Csv(), ingressPorts);
-            if(0 == udpIngressRules.Count()) throw new ApplicationException($"Region {regionInfo.Name} seem not having any SIP providers");
+            var sipIngressRules = SipProviders.Select(regionInfo.Name, app.Node.Resolve(ctx, "SipProviders")?.Csv(), ingressPorts);
+            if(0 == sipIngressRules.Count()) throw new ApplicationException($"Region {regionInfo.Name} seem not having any SIP providers");
             
             var ec2users = app.Node.Resolve(ctx, "Ec2users")?.Csv();
 
@@ -61,7 +81,7 @@ namespace Ivr
                     Region = regionInfo.Name,
                 },
                 RegionInfo = regionInfo,
-                SecurityGroupRules = rdpIngressRules.Concat(udpIngressRules),
+                SecurityGroupRules = rdpIngressRules.Concat(sipIngressRules),
                 KeyPairName = keyPairName,
                 RdpUserName = rdpUserName,
                 RdpUserPassword = rdpUserPassword,
