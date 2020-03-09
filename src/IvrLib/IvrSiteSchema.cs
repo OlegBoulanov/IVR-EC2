@@ -8,11 +8,9 @@ namespace IvrLib
 {
     public class IvrSiteSchema
     {
-        public IvrVpcProps VpcProps { get; set; } = new IvrVpcProps {};
-        public IEnumerable<string> RdpCidrs { get; set; }
+        public IvrVpcProps VpcProps { get; set; } = new IvrVpcProps {};       
         public string KeypairName { get; set; }
-        public string RdpUserName { get; set; }
-        public string RdpPassword { get; set; }
+        public RdpProps RdpProps { get; set; }
         public IEnumerable<string> EC2Users { get; set; }
         public string Domain { get; set; }
         public string InstallFrom { get; set; }
@@ -25,8 +23,8 @@ namespace IvrLib
         public bool Validate()
         {
             if(string.IsNullOrWhiteSpace(KeypairName) 
-                && (string.IsNullOrWhiteSpace(RdpUserName) || string.IsNullOrWhiteSpace(RdpPassword))) 
-                    throw new ArgumentException($"{nameof(KeypairName)} or {nameof(RdpUserName)} must not be provided");
+                && (string.IsNullOrWhiteSpace(RdpProps.UserName) || string.IsNullOrWhiteSpace(RdpProps.Password))) 
+                    throw new ArgumentException($"{nameof(KeypairName)} or {nameof(RdpProps.UserName)} must not be provided");
             return true;
         }
         public IvrSiteSchema Preprocess()

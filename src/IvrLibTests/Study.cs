@@ -34,11 +34,14 @@ namespace IvrLibTests
         [Test]
         public void InvalidFilePathChars()
         {
-            var invalidPathChars = "|\0\u0001\u0002\u0003\u0004\u0005\u0006\a\b\t\n\v\f\r\u000e\u000f\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f";
+            var invalidPathChars = "\u0001\u0002\u0003\u0004\u0005\u0006\a\b\t\n\v\f\r\u000e\u000f\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f";
             var invalidFileChars = "\"<>" + invalidPathChars + ":*?\\/";
             Assert.AreEqual(invalidPathChars, new string(Path.GetInvalidPathChars()));
             Assert.AreEqual(invalidFileChars, new string(Path.GetInvalidFileNameChars()));
-
+        }
+        [Test]
+        public void AsSpecificName()
+        {
             Assert.AreEqual("Host_10_0_0_4", $"Host_10.0.0.4".AsCloudFormationId());
             Assert.AreEqual("Host_10.0.0.4", $"Host_10.0.0.4".AsWindowsFolder());
             Assert.AreEqual("Host-10-0-0-4", $"Host_10.0.0.4".AsWindowsComputerName());
@@ -61,8 +64,11 @@ namespace IvrLibTests
                 MaxAzs = 2,
                 SipProviders = new List<string> { "Twilio", },
                 IngressPorts = new List<PortSpec> { PortSpec.Parse("SIP 5060"), PortSpec.Parse("RTP 5064-6000"), },
-                RdpUserName = "RdpUser",
-                RdpPassword = "P4$$word!",
+                RdpProps = new RdpProps {
+                    UserName = "RdpUser",
+                    Password = "P4$$word!",
+                    Cidrs = new List<string> { "1.2.3.4/32", }
+                },
                 HostGroups = new List<HostGroup> {
                     new HostGroup {
                         GroupName = "Mixed/Public",
