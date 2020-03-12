@@ -33,7 +33,7 @@ namespace IvrLibTests
             Assert.IsTrue(0 == (list?.Count() ?? 0));
         }
         [Test]
-        public void InvalidFilePathCharsStudy()
+        public void InvalidPathCharsStudy()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             { 
@@ -46,7 +46,7 @@ namespace IvrLibTests
             {
                 var ipc = System.IO.Path.GetInvalidPathChars();
                 Assert.AreEqual(1, ipc.Length);
-                Assert.AreEqual(0, ipc[0]);
+                Assert.AreEqual('\0', ipc[0]);
             }
         }
         [Test]
@@ -55,7 +55,7 @@ namespace IvrLibTests
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var invalidPathChars = "|\u0000\u0001\u0002\u0003\u0004\u0005\u0006\a\b\t\n\v\f\r\u000e\u000f\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f";
-                Assert.AreEqual(invalidPathChars.ToCharArray(), Path.GetInvalidPathChars());
+                Assert.AreEqual(invalidPathChars, Path.GetInvalidPathChars());
                 var invalidFileChars = "\"<>" + invalidPathChars + ":*?\\/";
                 Assert.AreEqual(invalidFileChars, new string(Path.GetInvalidFileNameChars()));
             } 
