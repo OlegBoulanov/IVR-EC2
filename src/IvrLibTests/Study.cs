@@ -41,27 +41,38 @@ namespace IvrLibTests
                 Assert.AreEqual(33, ipc.Length);
                 Assert.AreEqual('|', ipc[0]);
                 Assert.AreEqual('\0', ipc[1]);
+                var ifc = System.IO.Path.GetInvalidFileNameChars();
+                Assert.AreEqual(44, ifc.Length);
+                Assert.AreEqual('\"', ifc[0]);
+                Assert.AreEqual('<', ifc[1]);
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 var ipc = System.IO.Path.GetInvalidPathChars();
                 Assert.AreEqual(1, ipc.Length);
                 Assert.AreEqual('\0', ipc[0]);
+                var ifc = System.IO.Path.GetInvalidFileNameChars();
+                Assert.AreEqual(2, ifc.Length);
+                Assert.AreEqual('\0', ifc[0]);
+                Assert.AreEqual('/', ifc[1]);
             }
         }
         [Test]
-        public void InvalidFilePathChars()
+        public void InvalidFileNameAndPathChars()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var invalidPathChars = "|\u0000\u0001\u0002\u0003\u0004\u0005\u0006\a\b\t\n\v\f\r\u000e\u000f\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f";
                 Assert.AreEqual(invalidPathChars, Path.GetInvalidPathChars());
                 var invalidFileChars = "\"<>" + invalidPathChars + ":*?\\/";
-                Assert.AreEqual(invalidFileChars, new string(Path.GetInvalidFileNameChars()));
+                Assert.AreEqual(invalidFileChars, Path.GetInvalidFileNameChars());
             } 
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-
+                var invalidPathChars = "\0";
+                Assert.AreEqual(invalidPathChars, Path.GetInvalidPathChars());
+                var invalidFileChars = "\0/";
+                Assert.AreEqual(invalidFileChars, Path.GetInvalidFileNameChars());
             }
         }        
         [Test]
