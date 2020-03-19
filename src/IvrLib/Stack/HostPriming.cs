@@ -61,7 +61,7 @@ namespace IvrLib
                 commandsToRun.WithCommands($"Rename-Computer {props.HostName} -Force");
             }
             // anything else to do - before restarting?
-            commandsToRun.WithRestart(); // ...reboot to complete fixing UAC/renaming...
+            commandsToRun.WithRestart("-Force"); // ...reboot to complete fixing UAC/renaming...
             return commandsToRun;
         }
     }

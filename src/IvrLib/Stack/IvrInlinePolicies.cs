@@ -23,13 +23,13 @@ namespace IvrLib
                     new PolicyStatement().Allow().WithActions("s3:GetBucketLocation")
                         .WithResources(),
                     new PolicyStatement().Allow().WithActions("s3:ListBucket")
-                        .WithResources(schema.S3BucketResources("apps", "config", "install", "prompts", "prompts.update", "tools", "userjobs")),
+                        .WithResources(schema.S3BucketResources(schema.S3Buckets.ListBucket.ToArray())),
                     new PolicyStatement().Allow().WithActions("s3:GetObject")
-                        .WithResources(schema.S3ObjectResources("apps", "config", "install", "logs", "prompts", "prompts.update", "sessions", "segments", "tools", "userjobs")),
+                        .WithResources(schema.S3ObjectResources(schema.S3Buckets.GetObject.ToArray())),
                     new PolicyStatement().Allow().WithActions("s3:PutObject")
-                        .WithResources(schema.S3ObjectResources("logs", "sessions", "segments", "tools")),
+                        .WithResources(schema.S3ObjectResources(schema.S3Buckets.PutObject.ToArray())),
                     new PolicyStatement().Allow().WithActions("s3:DeleteObject")
-                        .WithResources(schema.S3ObjectResources("userjobs")),
+                        .WithResources(schema.S3ObjectResources(schema.S3Buckets.DeleteObject.ToArray())),
                     new PolicyStatement().Allow().WithActions("sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:GetQueueUrl", "sqs:ReceiveMessage", "sqs:SendMessage")
                         .WithResources(),
                     new PolicyStatement().Allow().WithActions("cloudwatch:GetMetricData", "cloudwatch:GetMetricStatistics", "cloudwatch:ListMetrics", "cloudwatch:PutMetricData")

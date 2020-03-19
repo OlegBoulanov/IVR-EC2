@@ -16,11 +16,13 @@ namespace IvrLib
         public string HostedZoneDomain { get; set; }
         public string SubdomainPublic { get; set; }
         public string SubdomainPrivate { get; set; }
+        public string HostNamePrefix { get; set; } = "CH-";
         public IEnumerable<HostGroup> HostGroups { get; set; }
         public IEnumerable<string> SipProviders { get; set; } = new List<string> { "Amazon", "Twilio", };
         public IEnumerable<PortSpec> IngressPorts { get; set; }
         public bool AllowAllOutbound { get; set; } = true;
         public string S3Suffix { get; set; } = "something.unique"/*.<region>.amazonaws.com*/;
+        public S3Buckets S3Buckets { get; set; }
         public bool Validate()
         {
             if(string.IsNullOrWhiteSpace(KeyPairName) && (string.IsNullOrWhiteSpace(RdpProps.UserName) || string.IsNullOrWhiteSpace(RdpProps.Password))) 

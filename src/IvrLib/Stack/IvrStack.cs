@@ -22,11 +22,16 @@ namespace IvrLib
 {
     public class IvrStack : Stack
     {
-        public IvrVpc Vpc { get; protected set; }
         public IvrStack(Construct scope, string stackId, StackProps stackProps, IvrSiteSchema schema, IEnumerable<SecurityGroupRule> securityGroupRules) : base(scope, stackId, stackProps)
         {
             // We'll start with brand new VPC
-            Vpc = new IvrVpc(this, $"OneAndOnly_", schema.VpcProps);
+            var vpc = new IvrVpc(this, $"OneAndOnly_", schema.VpcProps);
+
+            var s3gwep = new GatewayVpcEndpoint(this, $"S3GW_", new GatewayVpcEndpointProps { 
+                Vpc = vpc,
+                Service = GatewayVpcEndpointAwsService.S3, 
+                Subnets = new SubnetSelection[] { new SubnetSelection { SubnetType = SubnetType.PUBLIC, } },
+            });
 
             var iamRole = new Role(this, "Role_CallHost_", new RoleProps
             {
@@ -37,21 +42,22 @@ namespace IvrLib
             // Configure inbound security for RDP (and more?)
             var securityGroup = new SecurityGroup(this, $"Ingress_", new SecurityGroupProps
             {
-                Vpc = Vpc,
+                Vpc = vpc,
                 AllowAllOutbound = schema.AllowAllOutbound,
             });
             securityGroupRules.ForEach(rule => securityGroup.WithSecurityGroupRule(rule));
 
             // Finally - create our instances!
             var hosts = new List<HostInstance>();
-            for(var subnetIndex = 0; subnetIndex < Vpc.PublicSubnets.Length; ++subnetIndex)
+            for(var subnetIndex = 0; ++subnetIndex <= vpc.PublicSubnets.Length; )
             {
-                var instanceProps = IvrInstanceProps.InstanceProps(Vpc, Vpc.PublicSubnets[subnetIndex], iamRole, securityGroup, privateIpAddress: null);
+                var instanceProps = IvrInstanceProps.InstanceProps(vpc, vpc.PublicSubnets[subnetIndex - 1], iamRole, securityGroup, privateIpAddress: null);
+                var hostIndexInSubnet = 0;
                 foreach(var group in schema.HostGroups)
                 {
-                    for (var hostNumber = 0; hostNumber < Math.Min(group.HostCount, IvrVpcProps.MaxIpsPerSubnet); ++hostNumber)
+                    for (var hostCount = 0; ++hostCount <= Math.Min(group.HostCount, IvrVpcProps.MaxIpsPerSubnet); )
                     {
-                        var hostName = $"CH-{subnetIndex}{hosts.Count():00}";
+                        var hostName = $"{schema.HostNamePrefix}{subnetIndex}{++hostIndexInSubnet:00}";
                         var hostPrimingProps = new HostPrimingProps
                         {
                             HostName = hostName.AsWindowsComputerName(),   // must fit into 15 chars

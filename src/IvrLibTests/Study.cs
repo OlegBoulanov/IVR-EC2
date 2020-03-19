@@ -100,7 +100,7 @@ namespace IvrLibTests
             Assert.AreEqual($"Field1: one{Environment.NewLine}Field2: two{Environment.NewLine}Az1: &o0{Environment.NewLine}  Name: None{Environment.NewLine}  Count: 4{Environment.NewLine}Az2: *o0{Environment.NewLine}", s);
 
             var site = new IvrSiteSchema {
-                Domain = "my.site.domain.net",
+                HostedZoneDomain = "my.site.domain.net",
                 SipProviders = new List<string> { "Twilio", },
                 IngressPorts = new List<PortSpec> { PortSpec.Parse("SIP 5060"), PortSpec.Parse("RTP 5064-6000"), },
                 RdpProps = new RdpProps {
@@ -112,14 +112,12 @@ namespace IvrLibTests
                     new HostGroup {
                         GroupName = "Mixed/Public",
                         UseElasticIP = true,
-                        Subdomains = new List<string> { "sip", "workers", },
                         HostCount = 2,
                         InstallFrom = "https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini",
                     },
                     new HostGroup {
                         GroupName = "Workers/Private",
                         UseElasticIP = false,
-                        Subdomains = new List<string> { "workers", },
                         HostCount = 16,
                         InstallFrom = "https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini",
                     },
