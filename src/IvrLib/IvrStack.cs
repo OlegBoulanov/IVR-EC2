@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Collections.Generic;
@@ -22,76 +23,80 @@ namespace IvrLib
     public class IvrStack : Stack
     {
         public IvrVpc Vpc { get; protected set; }
-        public IvrStack(Construct scope, string stackId, IvrStackProps stackProps = null) : base(scope, stackId, stackProps)
+        public IvrStack(Construct scope, string stackId, StackProps stackProps, IvrSiteSchema schema, IEnumerable<SecurityGroupRule> securityGroupRules) : base(scope, stackId, stackProps)
         {
             // We'll start with brand new VPC
-            Vpc = new IvrVpc(this, $"OneAndOnly_", new IvrVpcProps {});
+            Vpc = new IvrVpc(this, $"OneAndOnly_", schema.VpcProps);
 
             var iamRole = new Role(this, "Role_CallHost_", new RoleProps
             {
                 AssumedBy = new ServicePrincipal("ec2.amazonaws.com"),
-                InlinePolicies = new IvrInlinePolicies(stackId, stackProps),
+                InlinePolicies = new IvrInlinePolicies(stackProps.Env.Account, stackId, schema),
             });
 
             // Configure inbound security for RDP (and more?)
             var securityGroup = new SecurityGroup(this, $"Ingress_", new SecurityGroupProps
             {
                 Vpc = Vpc,
-                AllowAllOutbound = stackProps.AllowAllOutbound,
+                AllowAllOutbound = schema.AllowAllOutbound,
             });
-            stackProps.SecurityGroupRules.ForEach(rule => securityGroup.WithSecurityGroupRule(rule));
+            securityGroupRules.ForEach(rule => securityGroup.WithSecurityGroupRule(rule));
 
-            // We have props.HostsDomainName registered in advance
-
+            // Finally - create our instances!
+            var hosts = new List<HostInstance>();
+            for(var subnetIndex = 0; subnetIndex < Vpc.PublicSubnets.Length; ++subnetIndex)
+            {
+                var instanceProps = IvrInstanceProps.InstanceProps(Vpc, Vpc.PublicSubnets[subnetIndex], iamRole, securityGroup, privateIpAddress: null);
+                foreach(var group in schema.HostGroups)
+                {
+                    for (var hostNumber = 0; hostNumber < Math.Min(group.HostCount, IvrVpcProps.MaxIpsPerSubnet); ++hostNumber)
+                    {
+                        var hostName = $"CH-{subnetIndex}{hosts.Count():00}";
+                        var hostPrimingProps = new HostPrimingProps
+                        {
+                            HostName = hostName.AsWindowsComputerName(),   // must fit into 15 chars
+                            WorkingFolder = $"CDK-{stackId}".AsWindowsFolder(),
+                            AwsAccount = stackProps.Env.Account,
+                            AwsRoleName = iamRole.RoleName,
+                            RdpUserName = schema.RdpProps.UserName,
+                            RdpUserPassword = schema.RdpProps.Password,
+                            RdpUserGroups = schema.RdpProps.UserGroups,
+                            EC2Users = schema.EC2Users,
+                            S3iArgs = $"{group.InstallFrom} --verbose", 
+                        };
+                        instanceProps.KeyName = schema.KeyPairName;
+                        instanceProps.UserData = HostPriming.PrimeForS3i(hostPrimingProps).UserData;
+                        hosts.Add(new HostInstance 
+                        { 
+                            Group = group, 
+                            Instance = new Instance_(this, hostName.AsCloudFormationId(), instanceProps), 
+                        });
+                    }
+                }
+            }
             // Create new Route53 zone           
             //var theZone = new PublicHostedZone(this, $"{stackId}_Zone", new PublicHostedZoneProps
             //{
             //    ZoneName = stackProps.HostsDomainName,
             //    Comment = "Created by CDK for existing domain",
             //});
+
             // or select existing created by registrar
+            // We have schema.Domain registered in advance
             var theZone = HostedZone.FromLookup(this, $"{stackId}_Zone_", new HostedZoneProviderProps
             {
-                DomainName = stackProps.HostsDomainName,
+                DomainName = schema.Domain,
                 //Comment = "HostedZone created by Route53 Registrar",
             });
-
-            var hostsPerSubnet = 2; // define properly !!!
-
-            // Finally - create our instances!
-            var hosts = new List<Instance_>();
-            for(var subnetIndex = 0; subnetIndex < Vpc.PublicSubnets.Length; ++subnetIndex)
-            {
-                for (var hostNumber = 0; hostNumber < Math.Min(hostsPerSubnet, IvrVpcProps.MaxIpsPerSubnet); ++hostNumber)
+            // assign Elastic IPs as needed
+            var eips = hosts.Where(h => h.Group.UseElasticIP).Select(h => {
+                return new CfnEIP(this, $"EIP_{h.Instance.InstancePrivateIp}_".AsCloudFormationId(), new CfnEIPProps
                 {
-                    var instanceProps = IvrInstanceProps.InstanceProps(Vpc, Vpc.PublicSubnets[subnetIndex], iamRole, securityGroup, privateIpAddress: null);
-                    var hostPrimingProps = new HostPrimingProps
-                    {
-                        HostName = $"CH-{subnetIndex}{hostNumber:00}".AsWindowsComputerName(),   // must fit into 15 chars
-                        WorkingFolder = $"CDK-{stackId}".AsWindowsFolder(),
-                        AwsAccount = stackProps.Env.Account,
-                        AwsRoleName = iamRole.RoleName,
-                        RdpUserName = stackProps.RdpUserName,
-                        RdpUserPassword = stackProps.RdpUserPassword,
-                        RdpUserGroups = stackProps.RdpUserGroups,
-                        EC2Users = stackProps.EC2Users,
-                        S3iArgs = stackProps.s3i_args,
-                    };
-                    instanceProps.KeyName = stackProps.KeyPairName;
-                    instanceProps.UserData = HostPriming.PrimeForS3i(hostPrimingProps).UserData;
-
-                    hosts.Add(new Instance_(this, $"Host_{subnetIndex}_{hostNumber}".AsCloudFormationId(), instanceProps));
-                }
-            }
-            // assign elastic IP to each host
-            var eips = hosts.Select(h => {
-                return new CfnEIP(this, $"EIP_{h.InstancePrivateIp}_".AsCloudFormationId(), new CfnEIPProps
-                {
-                    Domain = "vpn",
-                    InstanceId = h.InstanceId,
+                    Domain = "vpc", // 'standard' or 'vpc': https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-eip.html#cfn-ec2-eip-domain
+                    InstanceId = h.Instance.InstanceId,
                 });
             });
-            // register public EIPs
+            // register Elastic IPs
             var arPublic = new ARecord(this, $"ARecord_Public_".AsCloudFormationId(), new ARecordProps
             {
                 Zone = theZone,
@@ -104,7 +109,7 @@ namespace IvrLib
             {
                 Zone = theZone,
                 RecordName = $"hosts.{theZone.ZoneName}",
-                Target = RecordTarget.FromIpAddresses(hosts.Select(h => h.InstancePrivateIp).ToArray()),
+                Target = RecordTarget.FromIpAddresses(hosts.Select(h => h.Instance.InstancePrivateIp).ToArray()),
                 Ttl = Duration.Seconds(300),
             });
         }

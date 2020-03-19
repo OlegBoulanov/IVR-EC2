@@ -83,6 +83,11 @@ namespace IvrLibTests
             Assert.AreEqual("Host-10-0-0-4", $"Host_10.0.0.4".AsWindowsComputerName());
         }
         [Test]
+        public void PathTest()
+        {
+            Assert.AreEqual("https://blah-blah/ahh/oh/s.ini/../ooooh/wow.x", Path.Combine(Path.GetPathRoot("https://blah-blah/ahh/oh/s.ini"), "../ooooh/wow.x"));
+        }
+        [Test]
         public void YamlTest()
         {
             var ys = new SerializerBuilder().Build();
@@ -97,7 +102,6 @@ namespace IvrLibTests
             var site = new IvrSiteSchema {
                 Domain = "my.site.domain.net",
                 InstallFrom = "https://raw.githubusercontent.com/OlegBoulanov/s3i/",
-                MaxAzs = 2,
                 SipProviders = new List<string> { "Twilio", },
                 IngressPorts = new List<PortSpec> { PortSpec.Parse("SIP 5060"), PortSpec.Parse("RTP 5064-6000"), },
                 RdpProps = new RdpProps {
