@@ -85,7 +85,7 @@ namespace IvrLib
             // We have schema.Domain registered in advance
             var theZone = HostedZone.FromLookup(this, $"{stackId}_Zone_", new HostedZoneProviderProps
             {
-                DomainName = schema.Domain,
+                DomainName = schema.HostedZoneDomain,
                 //Comment = "HostedZone created by Route53 Registrar",
             });
             // assign Elastic IPs as needed
@@ -100,7 +100,7 @@ namespace IvrLib
             var arPublic = new ARecord(this, $"ARecord_Public_".AsCloudFormationId(), new ARecordProps
             {
                 Zone = theZone,
-                RecordName = $"eips.{theZone.ZoneName}",
+                RecordName = $"{schema.SubdomainPublic}.{theZone.ZoneName}",
                 Target = RecordTarget.FromValues(eips.Select(eip => eip.Ref).ToArray()),
                 Ttl = Duration.Seconds(300),
             });
@@ -108,7 +108,7 @@ namespace IvrLib
             var arPrivate = new ARecord(this, $"ARecord_Private_".AsCloudFormationId(), new ARecordProps
             {
                 Zone = theZone,
-                RecordName = $"hosts.{theZone.ZoneName}",
+                RecordName = $"{schema.SubdomainPrivate}.{theZone.ZoneName}",
                 Target = RecordTarget.FromIpAddresses(hosts.Select(h => h.Instance.InstancePrivateIp).ToArray()),
                 Ttl = Duration.Seconds(300),
             });

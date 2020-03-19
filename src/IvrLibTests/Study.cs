@@ -101,7 +101,6 @@ namespace IvrLibTests
 
             var site = new IvrSiteSchema {
                 Domain = "my.site.domain.net",
-                InstallFrom = "https://raw.githubusercontent.com/OlegBoulanov/s3i/",
                 SipProviders = new List<string> { "Twilio", },
                 IngressPorts = new List<PortSpec> { PortSpec.Parse("SIP 5060"), PortSpec.Parse("RTP 5064-6000"), },
                 RdpProps = new RdpProps {
@@ -115,14 +114,14 @@ namespace IvrLibTests
                         UseElasticIP = true,
                         Subdomains = new List<string> { "sip", "workers", },
                         HostCount = 2,
-                        InstallFrom = "develop/Examples/Config.ini",
+                        InstallFrom = "https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini",
                     },
                     new HostGroup {
                         GroupName = "Workers/Private",
                         UseElasticIP = false,
                         Subdomains = new List<string> { "workers", },
                         HostCount = 16,
-                        InstallFrom = "develop/Examples/Config.ini",
+                        InstallFrom = "https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini",
                     },
                 },
             };
