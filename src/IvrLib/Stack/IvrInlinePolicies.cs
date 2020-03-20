@@ -10,26 +10,26 @@ namespace IvrLib
 {
     public class IvrInlinePolicies : Dictionary<string, PolicyDocument>
     {
-        public IvrInlinePolicies(string stackId, IvrStackProps props)
+        public IvrInlinePolicies(string account, string stackId, IvrSiteSchema schema)
         {
             Add("IvrPolicy", new PolicyDocument(new PolicyDocumentProps {
                 Statements = new PolicyStatement[] {
                     // Role is needed for allowing tools to use EC2 provided credentials
                     // see https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-role.html
                     new PolicyStatement().Allow().WithActions("sts:AssumeRole")
-                        .WithResources($"arn:aws:iam::{props.Env.Account}:role/{stackId}*"),    // allow roles defined in this stack
+                        .WithResources($"arn:aws:iam::{account}:role/{stackId}*"),    // allow roles defined in this stack
                     new PolicyStatement().Allow().WithActions("ec2:StartInstances", "ec2:StopInstances", "ec2:DescribeInstances")
                         .WithResources(),
                     new PolicyStatement().Allow().WithActions("s3:GetBucketLocation")
                         .WithResources(),
                     new PolicyStatement().Allow().WithActions("s3:ListBucket")
-                        .WithResources(props.S3BucketResources("apps", "config", "install", "prompts", "prompts.update", "tools", "userjobs")),
+                        .WithResources(schema.S3BucketResources(schema.S3Buckets.ListBucket.ToArray())),
                     new PolicyStatement().Allow().WithActions("s3:GetObject")
-                        .WithResources(props.S3ObjectResources("apps", "config", "install", "logs", "prompts", "prompts.update", "sessions", "segments", "tools", "userjobs")),
+                        .WithResources(schema.S3ObjectResources(schema.S3Buckets.GetObject.ToArray())),
                     new PolicyStatement().Allow().WithActions("s3:PutObject")
-                        .WithResources(props.S3ObjectResources("logs", "sessions", "segments", "tools")),
+                        .WithResources(schema.S3ObjectResources(schema.S3Buckets.PutObject.ToArray())),
                     new PolicyStatement().Allow().WithActions("s3:DeleteObject")
-                        .WithResources(props.S3ObjectResources("userjobs")),
+                        .WithResources(schema.S3ObjectResources(schema.S3Buckets.DeleteObject.ToArray())),
                     new PolicyStatement().Allow().WithActions("sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:GetQueueUrl", "sqs:ReceiveMessage", "sqs:SendMessage")
                         .WithResources(),
                     new PolicyStatement().Allow().WithActions("cloudwatch:GetMetricData", "cloudwatch:GetMetricStatistics", "cloudwatch:ListMetrics", "cloudwatch:PutMetricData")

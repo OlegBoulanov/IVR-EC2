@@ -152,9 +152,9 @@ namespace IvrLib
             }
             return this;
         }        
-        public void WithRestart()
+        public void WithRestart(string args = "")
         {
-            WithCommands("Restart-Computer");
+            WithCommands($"Restart-Computer {args}");
             // no return, so compiler would complain if misused
         }
     }

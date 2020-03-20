@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,51 +27,53 @@ namespace Ivr
             // can't rely on (incorrect) CDK implementation, so read these files one by one, values from previous may be overridden by those from next
             var ctx = Context.FromJsonFiles($"{OSAgnostic.Home}/cdk.json", $"cdk.json", app.Node.TryGetContext("ctx") as string);
 
+            // Mandatory parameters are not a part of the schema
             var accountNumber = app.Node.Resolve(ctx, "account", "CDK_DEFAULT_ACCOUNT");
+            if(string.IsNullOrWhiteSpace(accountNumber)) throw new ArgumentException($"No account number provided");
             var regionName = app.Node.Resolve(ctx, "region", "CDK_DEFAULT_REGION");
             var regionInfo = RegionInfo.Get(regionName);
-            if(null == regionInfo || null == regionInfo.DomainSuffix) throw new ApplicationException($"Invalid region: '{regionName}'");
+            if(null == regionInfo || null == regionInfo.DomainSuffix) throw new ArgumentException($"Invalid region: '{regionName}'");
 
             System.Console.WriteLine($"{accountNumber}/{regionInfo.Name}, {regionInfo.DomainSuffix}");
 
-            var rdpCIDRs = app.Node.Resolve(ctx, "RdpCIDRs", help: "expected as comma-separated list of IPv4 CIDRs, like '73.118.72.189/32, 54.203.115.236/32'").Csv();
-            
-            // we expect to have an RDP connection
-            var keyPairName = app.Node.Resolve(ctx, "KeyPairName");
-            var rdpUserName = app.Node.Resolve(ctx, "RdpUserName");
-            var rdpUserPassword = app.Node.Resolve(ctx, "RdpUserPassword");
-            if(string.IsNullOrWhiteSpace(keyPairName) && string.IsNullOrWhiteSpace(rdpUserName)) throw new ApplicationException($"RdpUserName, or KeyPairName (to retrieve Administrator account password later) is required");
+            // Site Schema itself
+            var schemaFileName = app.Node.Resolve(ctx, "schema");   // help: "Schema file required");
+            if (string.IsNullOrWhiteSpace(schemaFileName)) throw new ArgumentException("No schema defined");
+            Console.WriteLine($"Schema [{schemaFileName}]");
+            IvrSiteSchema schema;
+            using (var sr = new StreamReader(schemaFileName))
+            {
+                var ext = Path.GetExtension(schemaFileName).ToLower();
+                if (".yaml" == ext)
+                {
+                    schema = new YamlDotNet.Serialization.DeserializerBuilder().Build().Deserialize<IvrSiteSchema>(sr.ReadToEnd());
+                    Console.WriteLine(new SerializerBuilder().Build().Serialize(schema));
+                    schema.Validate();
+                    schema.Preprocess();
+                }
+                else
+                {
+                    throw new ArgumentException($"Handling of *{ext} format is not implemented (yet)");
+                }
+                //throw new ApplicationException("The rest is not implemented yet");
+            }
 
-            // Ingress traffic open for RDP and inbound SIP providers only
-            var rdpIngressRules = rdpCIDRs.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), "RDP").WithDescription($"RDP client"));
+            var rdpIngressRules = schema.RdpProps.Cidrs.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), "RDP").WithDescription($"RDP client"));
 
-            var ingressPorts = app.Node.Resolve(ctx, "IngressPorts", help: "expected as comma-separated list of ingress port ranges, like 'SIP 5060', or 'SIPS 5061, RTP 5062-5300'")
-                .Csv()
-                .Select(s => PortSpec.Parse(s));
+            var ingressPorts = schema.IngressPorts;
 
-            var udpIngressRules = SipProviders.Select(regionInfo.Name, app.Node.Resolve(ctx, "SipProviders")?.Csv(), ingressPorts);
-            if(0 == udpIngressRules.Count()) throw new ApplicationException($"Region {regionInfo.Name} seem not having any SIP providers");
-            
-            var ec2users = app.Node.Resolve(ctx, "Ec2users")?.Csv();
+            var sipIngressRules = SipProviders.Select(regionInfo.Name, schema.SipProviders, ingressPorts);
 
-            var ivrStackProps = new IvrStackProps
+            new IvrStack(app, "IvrStack", new StackProps
             {
                 Env = new Amazon.CDK.Environment
                 {
                     Account = accountNumber,
                     Region = regionInfo.Name,
                 },
-                RegionInfo = regionInfo,
-                SecurityGroupRules = rdpIngressRules.Concat(udpIngressRules),
-                KeyPairName = keyPairName,
-                RdpUserName = rdpUserName,
-                RdpUserPassword = rdpUserPassword,
-                BucketsDomain = app.Node.Resolve(ctx, "BucketsDomain"),
-                HostsDomainName = app.Node.Resolve(ctx, "HostsDomainName", null, "Existing domain name is expected"),
-                EC2Users = ec2users,
-                s3i_args = app.Node.Resolve(ctx, "s3i_args"),
-            };
-            new IvrStack(app, "IvrStack", ivrStackProps);
+            }, 
+            schema,
+            rdpIngressRules.Concat(sipIngressRules));
 
             //var yaml = new SerializerBuilder().Build().Serialize(ivrStackProps);
             //Console.WriteLine(yaml);
