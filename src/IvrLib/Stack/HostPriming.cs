@@ -58,10 +58,11 @@ namespace IvrLib
             // final touches and reboot
             commandsToRun.WithDisableUAC(restartComputer: false);
             if(!string.IsNullOrWhiteSpace(props.HostName)) {
-                commandsToRun.WithCommands($"Rename-Computer {props.HostName} -Force");
+                commandsToRun.WithCommands($"Rename-Computer {props.HostName} -Force -Restart");
             }
-            // anything else to do - before restarting?
-            commandsToRun.WithRestart("-Force"); // ...reboot to complete fixing UAC/renaming...
+            // for some reason, separate restart does not work on instances with EIP attached ???
+            //// anything else to do - before restarting?
+            //commandsToRun.WithRestart("-Force"); // ...reboot to complete fixing UAC/renaming...
             return commandsToRun;
         }
     }
