@@ -8,14 +8,15 @@ namespace IvrLib
 {
     public class IvrSiteSchema
     {
+        public IDictionary<string, string> Defines { get; set; } = new Dictionary<string, string> {};
         public IvrVpcProps VpcProps { get; set; } = new IvrVpcProps {};       
         public string KeyPairName { get; set; }
         public RdpProps RdpProps { get; set; }
         public IEnumerable<string> EC2Users { get; set; }
         // Pre-registered site domain name
         public string HostedZoneDomain { get; set; }
-        public string SubdomainPublic { get; set; }
-        public string SubdomainPrivate { get; set; }
+        public string SubdomainEIPs { get; set; }
+        public string SubdomainHosts { get; set; }
         public string HostNamePrefix { get; set; } = "CH-";
         public IEnumerable<HostGroup> HostGroups { get; set; }
         public IEnumerable<string> SipProviders { get; set; } = new List<string> { "Amazon", "Twilio", };

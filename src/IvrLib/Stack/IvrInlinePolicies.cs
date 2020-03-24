@@ -5,6 +5,7 @@ using System.Linq;
 using Amazon.CDK.AWS.IAM;
 
 using IvrLib.Security;
+using IvrLib.Utils;
 
 namespace IvrLib
 {
@@ -23,13 +24,13 @@ namespace IvrLib
                     new PolicyStatement().Allow().WithActions("s3:GetBucketLocation")
                         .WithResources(),
                     new PolicyStatement().Allow().WithActions("s3:ListBucket")
-                        .WithResources(schema.S3BucketResources(schema.S3Buckets.ListBucket.ToArray())),
+                        .WithResources(schema.S3BucketResources(schema.S3Buckets.ListBucket.SelectMany(x => x.Csv()).ToArray())),
                     new PolicyStatement().Allow().WithActions("s3:GetObject")
-                        .WithResources(schema.S3ObjectResources(schema.S3Buckets.GetObject.ToArray())),
+                        .WithResources(schema.S3ObjectResources(schema.S3Buckets.GetObject.SelectMany(x => x.Csv()).ToArray())),
                     new PolicyStatement().Allow().WithActions("s3:PutObject")
-                        .WithResources(schema.S3ObjectResources(schema.S3Buckets.PutObject.ToArray())),
+                        .WithResources(schema.S3ObjectResources(schema.S3Buckets.PutObject.SelectMany(x => x.Csv()).ToArray())),
                     new PolicyStatement().Allow().WithActions("s3:DeleteObject")
-                        .WithResources(schema.S3ObjectResources(schema.S3Buckets.DeleteObject.ToArray())),
+                        .WithResources(schema.S3ObjectResources(schema.S3Buckets.DeleteObject.SelectMany(x => x.Csv()).ToArray())),
                     new PolicyStatement().Allow().WithActions("sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:GetQueueUrl", "sqs:ReceiveMessage", "sqs:SendMessage")
                         .WithResources(),
                     new PolicyStatement().Allow().WithActions("cloudwatch:GetMetricData", "cloudwatch:GetMetricStatistics", "cloudwatch:ListMetrics", "cloudwatch:PutMetricData")

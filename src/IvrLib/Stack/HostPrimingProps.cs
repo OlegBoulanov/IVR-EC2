@@ -10,9 +10,7 @@ namespace IvrLib
         public string WorkingFolder { get; set; } = "CDK_Stack";
         public string AwsAccount { get; set; }
         public string AwsRoleName { get; set; }
-        public string RdpUserName { get; set; }
-        public string RdpUserPassword { get; set; }
-        public IEnumerable<string> RdpUserGroups { get; set; }
+        public RdpProps RdpProps { get; set; }
         public IEnumerable<string> EC2Users { get; set; }
         public string S3iArgs { get; set; }
     }

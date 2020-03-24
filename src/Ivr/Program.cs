@@ -46,7 +46,8 @@ namespace Ivr
                 var ext = Path.GetExtension(schemaFileName).ToLower();
                 if (".yaml" == ext)
                 {
-                    schema = new YamlDotNet.Serialization.DeserializerBuilder().Build().Deserialize<IvrSiteSchema>(sr.ReadToEnd());
+                    var schemaText = System.Environment.ExpandEnvironmentVariables(sr.ReadToEnd());
+                    schema = new YamlDotNet.Serialization.DeserializerBuilder().Build().Deserialize<IvrSiteSchema>(schemaText);
                     Console.WriteLine(new SerializerBuilder().Build().Serialize(schema));
                     schema.Validate();
                     schema.Preprocess();

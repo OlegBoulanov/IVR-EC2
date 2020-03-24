@@ -17,10 +17,10 @@ namespace IvrLib
                 .Log();
 
             // Create RDP user first
-            if(!string.IsNullOrWhiteSpace(props.RdpUserName)) {
+            if(!string.IsNullOrWhiteSpace(props.RdpProps.UserName)) {
                 commandsToRun 
-                    .WithNewUser(props.RdpUserName, props.RdpUserPassword, props.RdpUserGroups.ToArray())
-                    .WithCredentials(props.RdpUserName, props.RdpUserPassword, "$creds")
+                    .WithNewUser(props.RdpProps.UserName, props.RdpProps.Password, props.RdpProps.UserGroups.ToArray())
+                    .WithCredentials(props.RdpProps.UserName, props.RdpProps.Password, "$creds")
                     .WithStartProcess("regedit", $"/s {explorerSettingsPath}", "$creds")
                     .Log();
             }

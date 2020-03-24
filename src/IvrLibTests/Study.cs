@@ -110,13 +110,11 @@ namespace IvrLibTests
                 },
                 HostGroups = new List<HostGroup> {
                     new HostGroup {
-                        GroupName = "Mixed/Public",
                         UseElasticIP = true,
                         HostCount = 2,
                         InstallFrom = "https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini",
                     },
                     new HostGroup {
-                        GroupName = "Workers/Private",
                         UseElasticIP = false,
                         HostCount = 16,
                         InstallFrom = "https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini",
