@@ -8,7 +8,6 @@ using Amazon.CDK;
 using Amazon.CDK.AWS.EC2;
 using Amazon.CDK.RegionInfo;
 
-using YamlDotNet.Serialization;
 
 using IvrLib;
 using IvrLib.Security;
@@ -46,9 +45,8 @@ namespace Ivr
                 var ext = Path.GetExtension(schemaFileName).ToLower();
                 if (".yaml" == ext)
                 {
-                    var schemaText = System.Environment.ExpandEnvironmentVariables(sr.ReadToEnd());
-                    schema = new YamlDotNet.Serialization.DeserializerBuilder().Build().Deserialize<IvrSiteSchema>(schemaText);
-                    Console.WriteLine(new SerializerBuilder().Build().Serialize(schema));
+                    schema = IvrSiteSchema.FromString(System.Environment.ExpandEnvironmentVariables(sr.ReadToEnd()));
+                    Console.WriteLine(new YamlDotNet.Serialization.SerializerBuilder().Build().Serialize(schema));
                     schema.Validate();
                     schema.Preprocess();
                 }

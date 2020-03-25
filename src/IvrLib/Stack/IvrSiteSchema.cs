@@ -2,13 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using YamlDotNet.Serialization;
+
 using IvrLib.Utils;
 
 namespace IvrLib
 {
     public class IvrSiteSchema
     {
-        public IDictionary<string, string> Defines { get; set; } = new Dictionary<string, string> {};
+        public IDictionary<string, string> Define { get; set; } = new Dictionary<string, string> {};
         public IvrVpcProps VpcProps { get; set; } = new IvrVpcProps {};       
         public string KeyPairName { get; set; }
         public RdpProps RdpProps { get; set; }
@@ -49,6 +51,21 @@ namespace IvrLib
         public string [] S3ObjectResources(params string [] prefixes)
         {
             return S3BucketResources(prefixes).Select(bucket => $"{bucket}/*").ToArray();
+        }
+        public static IvrSiteSchema FromString(string s)
+        {
+            var schemaText = System.Environment.ExpandEnvironmentVariables(s);
+            var ds = new DeserializerBuilder().Build();
+            var schema = ds.Deserialize<IvrSiteSchema>(schemaText);
+            var defines = schema.Define;
+            schema.Define = null;   // drop defines for now
+            schemaText = new SerializerBuilder().Build().Serialize(schema);
+            // and expand defines in schema text
+            foreach (var d in defines) schemaText = schemaText.Replace(d.Key, d.Value);
+            // deserialize with all defines expanded
+            schema = ds.Deserialize<IvrSiteSchema>(schemaText);
+            schema.Define = defines;
+            return schema;
         }
     }
 }
