@@ -112,12 +112,12 @@ namespace IvrLibTests
                     new HostGroup {
                         UseElasticIP = true,
                         HostCount = 2,
-                        InstallFrom = "https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini",
+                        Install = "https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini",
                     },
                     new HostGroup {
                         UseElasticIP = false,
                         HostCount = 16,
-                        InstallFrom = "https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini",
+                        Install = "https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini",
                     },
                 },
             };

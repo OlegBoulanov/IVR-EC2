@@ -67,7 +67,7 @@ namespace IvrLib
                             AwsRoleName = role.RoleName,
                             RdpProps = schema.RdpProps,
                             EC2Users = schema.EC2Users,
-                            S3iArgs = $"{group.InstallFrom} --verbose", 
+                            S3iArgs = $"{group.Install} --verbose", 
                         };
                         instanceProps.KeyName = schema.KeyPairName;
                         instanceProps.UserData = HostPriming.PrimeForS3i(hostPrimingProps).UserData;
