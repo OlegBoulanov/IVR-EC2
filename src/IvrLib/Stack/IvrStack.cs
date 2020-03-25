@@ -25,7 +25,7 @@ namespace IvrLib
         public IvrStack(Construct scope, string stackId, StackProps stackProps, IvrSiteSchema schema, IEnumerable<SecurityGroupRule> securityGroupRules) : base(scope, stackId, stackProps)
         {
             // We'll start with brand new VPC
-            var vpc = new IvrVpc(this, $"OneAndOnly_", schema.VpcProps);
+            var vpc = new IvrVpc(this, $"VPC", schema.VpcProps);
 
             var s3gw = new GatewayVpcEndpoint(this, $"S3GW_", new GatewayVpcEndpointProps 
             { 
