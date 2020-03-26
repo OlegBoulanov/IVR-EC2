@@ -46,7 +46,8 @@ namespace IvrLib
         }
         public string [] S3BucketResources(params string [] prefixes)
         {
-            return prefixes.Select(prefix => $"arn:aws:s3:::{prefix}.{S3Suffix}").ToArray();
+            var dotSuffix = string.IsNullOrWhiteSpace(S3Suffix) ? "" : $".{S3Suffix}";
+            return prefixes.Select(prefix => $"arn:aws:s3:::{prefix}{dotSuffix}").ToArray();
         }
         public string [] S3ObjectResources(params string [] prefixes)
         {
