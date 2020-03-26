@@ -5,7 +5,7 @@ Define:
   "$HOSTNAME$":	Example-
   
 # this domain must be registered with Route53 in advance
-HostedZoneDomain: your-company-domain.net
+HostedZoneDomain: your-domain.net
 # these are created if needed
 SubdomainEIPs:	sip.$SITENAME$
 SubdomainHosts:	hosts.$SITENAME$
@@ -22,7 +22,7 @@ RdpProps:
   UserName: Rdp
   Password: Password1
   Cidrs:
-  - <put-your-public-IPv4-here>/32
+  - 1.2.3.4/32
 
 # Host groups
 HostNamePrefix: $HOSTNAME$
