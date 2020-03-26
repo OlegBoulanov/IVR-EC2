@@ -44,14 +44,10 @@ namespace IvrLib
             if(null == EC2Users || 0 == EC2Users.Count()) EC2Users = new List<string> { RdpProps.UserName ?? "Administrator" };
             return this;
         }
-        public string [] S3BucketResources(params string [] prefixes)
+        public string [] S3Resources(string suffix, params string [] prefixes)
         {
             var dotSuffix = string.IsNullOrWhiteSpace(S3Suffix) ? "" : $".{S3Suffix}";
-            return prefixes.Select(prefix => $"arn:aws:s3:::{prefix}{dotSuffix}").ToArray();
-        }
-        public string [] S3ObjectResources(params string [] prefixes)
-        {
-            return S3BucketResources(prefixes).Select(bucket => $"{bucket}/*").ToArray();
+            return prefixes.Select(prefix => $"arn:aws:s3:::{prefix}{dotSuffix}{suffix}").ToArray();
         }
         public static IvrSiteSchema FromString(string s)
         {

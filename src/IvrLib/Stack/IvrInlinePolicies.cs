@@ -34,18 +34,18 @@ namespace IvrLib
                         .WithResources(),
             };
             //
-            AllowCsv(statements, schema, schema.S3Buckets.ListBucket, "s3:ListBucket");
-            AllowCsv(statements, schema, schema.S3Buckets.GetObject, "s3:GetObject");
-            AllowCsv(statements, schema, schema.S3Buckets.PutObject, "s3:PutObject");
-            AllowCsv(statements, schema, schema.S3Buckets.DeleteObject, "s3:DeleteObject");
+            Allow(statements, schema, schema.S3Buckets.ListBucket, "", "s3:ListBucket");
+            Allow(statements, schema, schema.S3Buckets.GetObject, "/*", "s3:GetObject");
+            Allow(statements, schema, schema.S3Buckets.PutObject, "/*", "s3:PutObject");
+            Allow(statements, schema, schema.S3Buckets.DeleteObject, "/*", "s3:DeleteObject");
             //
             Add("IvrPolicy", new PolicyDocument(new PolicyDocumentProps { Statements = statements.ToArray(), }));
         }
-        void AllowCsv(IList<PolicyStatement> statements, IvrSiteSchema schema, IEnumerable<string> objects, params string [] actions)
+        void Allow(IList<PolicyStatement> statements, IvrSiteSchema schema, IEnumerable<string> buckets, string suffix, params string [] actions)
         {
-            if (null != objects && 0 < objects.Count())
+            if (null != buckets && 0 < buckets.Count())
             {
-                statements.Add(new PolicyStatement().Allow().WithActions(actions).WithResources(schema.S3BucketResources(objects.SelectMany(x => x.Csv()).ToArray())));
+                statements.Add(new PolicyStatement().Allow().WithActions(actions).WithResources(schema.S3Resources(suffix, buckets.SelectMany(x => x.Csv()).ToArray())));
             }
         }
     }
