@@ -27,21 +27,21 @@ namespace IvrLib
             // We'll start with brand new VPC
             var vpc = new IvrVpc(this, $"VPC", schema.VpcProps);
 
-            var s3gw = new GatewayVpcEndpoint(this, $"S3GW_", new GatewayVpcEndpointProps 
+            var s3gw = new GatewayVpcEndpoint(this, $"S3GW", new GatewayVpcEndpointProps 
             { 
                 Vpc = vpc,
                 Service = GatewayVpcEndpointAwsService.S3, 
                 Subnets = new SubnetSelection[] { new SubnetSelection { SubnetType = SubnetType.PUBLIC, } },
             });
 
-            var role = new Role(this, "IVR_", new RoleProps
+            var role = new Role(this, "IVR", new RoleProps
             {
                 AssumedBy = new ServicePrincipal("ec2.amazonaws.com"),
                 InlinePolicies = new IvrInlinePolicies(stackProps.Env.Account, stackId, schema),
             });
 
             // Configure inbound security for RDP (and more?)
-            var securityGroup = new SecurityGroup(this, $"Ingress_", new SecurityGroupProps
+            var securityGroup = new SecurityGroup(this, $"Ingress", new SecurityGroupProps
             {
                 Vpc = vpc,
                 AllowAllOutbound = schema.AllowAllOutbound,
@@ -126,6 +126,8 @@ namespace IvrLib
                         Ttl = Duration.Seconds(300),
                     });
                 }
+                Console.WriteLine($"EIPS[{eips.Count}]");
+                //throw new Exception();
             }
         }
     }
