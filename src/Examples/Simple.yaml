@@ -1,0 +1,54 @@
+--- # Simple configuration example
+Define:
+  "$INSTALL$":	https://raw.githubusercontent.com/OlegBoulanov/s3i/develop
+  "$SITENAME$":	example
+  "$HOSTNAME$":	Example-
+  
+# this domain must be registered with Route53 in advance
+HostedZoneDomain: your-company-domain.net
+# these are created if needed
+SubdomainEIPs:	sip.$SITENAME$
+SubdomainHosts:	hosts.$SITENAME$
+
+# optional VPC props, if different from default
+VpcProps:
+  VpcCidrAddr: 10.20.0.0
+  VpcCidrMask: 16
+  SubnetCidrMask: 24
+  MaxAzs: 2
+
+# who and how can RDP to these hosts
+RdpProps: 
+  UserName: Rdp
+  Password: Password1
+  Cidrs:
+  - <put-your-public-IPv4-here>/32
+
+# Host groups
+HostNamePrefix: $HOSTNAME$
+HostGroups:
+# One group only
+- Install: $INSTALL$/Examples/Config.ini
+  UseElasticIP: true
+  HostCount: 1
+
+# SIP Providers to select by name
+SipProviders:
+- Twilio
+
+# ... and corresponding host SIP/RTP ports on hosts
+IngressPorts:
+- { Protocol: SIP, StartPort: 5060, EndPort: 5062 }
+- { Protocol: RTP, StartPort: 5064, EndPort: 5120 }
+AllowAllOutbound: true
+
+# org/region-specific config
+S3Suffix: your-company.com
+S3Buckets:
+  ListBucket: 
+    - config, install
+  GetObject:
+    - config, install, logs
+  PutObject:
+    - logs
+...
