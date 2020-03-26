@@ -6,6 +6,7 @@ namespace IvrLib
 {
     public class HostGroup
     {
+        public IvrInstanceProps InstanceProps { get; set; } = new IvrInstanceProps();
         public string Install { get; set; }
         public bool UseElasticIP { get; set; } = false;
         public int HostCount { get; set; } = 1;

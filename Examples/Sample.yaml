@@ -1,3 +1,4 @@
+%YAML 1.1
 --- # Simple configuration example
 Define:
   "$INSTALL$":	https://raw.githubusercontent.com/OlegBoulanov/s3i/develop
@@ -28,7 +29,12 @@ RdpProps:
 HostNamePrefix: $HOSTNAME$
 HostGroups:
 # One group only
-- Install: $INSTALL$/Examples/Config.ini
+- InstanceProps:
+    InstanceClass: BURSTABLE3
+    InstanceSize: SMALL
+    WindowsVersion: WINDOWS_SERVER_2019_ENGLISH_FULL_BASE
+    VolumeSize: 20
+  Install: $INSTALL$/Examples/Config.ini
   UseElasticIP: true
   HostCount: 1
 

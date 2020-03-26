@@ -52,10 +52,10 @@ namespace IvrLib
             var hosts = new List<HostInstance>();
             for(var subnetIndex = 0; ++subnetIndex <= vpc.PublicSubnets.Length; )
             {
-                var instanceProps = IvrInstanceProps.InstanceProps(vpc, vpc.PublicSubnets[subnetIndex - 1], role, securityGroup);
                 var hostIndexInSubnet = 0;
                 foreach(var group in schema.HostGroups)
                 {
+                    var instanceProps = IvrInstanceProps.InstanceProps(vpc, vpc.PublicSubnets[subnetIndex - 1], role, securityGroup, group.InstanceProps);
                     for (var hostCount = 0; ++hostCount <= Math.Min(group.HostCount, IvrVpcProps.MaxIpsPerSubnet); ++hostIndexInSubnet)
                     {
                         var hostName = $"{schema.HostNamePrefix}{subnetIndex}{hostIndexInSubnet:00}";
