@@ -44,6 +44,13 @@ namespace IvrLib
                 )
                 .Log();
 
+            if (null != props.DownloadAndInstall && 0 < props.DownloadAndInstall.Count())
+            {
+                commandsToRun
+                    .WithDownloadAndInstall(props.DownloadAndInstall.ToArray())
+                    .Log();
+            }
+
             // If requested, install and run s3i to install the rest indirectly from specific remote configuration
             if(!string.IsNullOrWhiteSpace(props.S3iArgs)) {
                 commandsToRun

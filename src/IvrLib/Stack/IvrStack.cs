@@ -68,6 +68,7 @@ namespace IvrLib
                             AwsRoleName = role.RoleName,
                             RdpProps = schema.RdpProps,
                             EC2Users = schema.EC2Users,
+                            DownloadAndInstall = group.DownloadAndInstall,
                             S3iArgs = $"{group.Install} --verbose", 
                         };
                         instanceProps.KeyName = schema.KeyPairName;
