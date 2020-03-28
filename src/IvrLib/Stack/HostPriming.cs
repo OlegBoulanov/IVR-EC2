@@ -36,14 +36,7 @@ namespace IvrLib
                     .Log();
             });
 
-            // Download and install bare minimum: VC runtime, .NET Core, AWS CLI, ...
-            commandsToRun
-                .WithDownloadAndInstall($"https://aka.ms/vs/16/release/vc_redist.x86.exe /s",
-                    $"https://download.visualstudio.microsoft.com/download/pr/9f010da2-d510-4271-8dcc-ad92b8b9b767/d2dd394046c20e0563ce5c45c356653f/dotnet-runtime-3.1.0-win-x64.exe /s",
-                    $"https://awscli.amazonaws.com/AWSCLIV2.msi /quiet"
-                )
-                .Log();
-
+            // Download and install whatever is needed
             if (null != props.DownloadAndInstall && 0 < props.DownloadAndInstall.Count())
             {
                 commandsToRun
