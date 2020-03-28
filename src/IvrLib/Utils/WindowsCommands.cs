@@ -151,7 +151,12 @@ namespace IvrLib
                 return null;    // break the chain, triggering runtime error if misused
             }
             return this;
-        }        
+        }       
+        public WindowsCommands WithDisableFirewall() 
+        {
+            WithCommands($"Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False");
+            return this;
+        }
         public void WithRestart(string args = "")
         {
             WithCommands($"Restart-Computer {args}");

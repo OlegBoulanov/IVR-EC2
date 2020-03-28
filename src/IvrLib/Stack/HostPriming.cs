@@ -53,7 +53,13 @@ namespace IvrLib
                     .Log();
             }
 
-// $timeout=8; $timer=[Diagnostics.StopWatch]::StartNew();while(($timer.Elapsed.TotalSeconds -lt $timeout)) { Start-Sleep -Seconds 1; Write-Host $timer.Elapsed.TotalSeconds };$timer.Stop();
+            // $timeout=8; $timer=[Diagnostics.StopWatch]::StartNew();while(($timer.Elapsed.TotalSeconds -lt $timeout)) { Start-Sleep -Seconds 1; Write-Host $timer.Elapsed.TotalSeconds };$timer.Stop();
+
+            // To allow SIP communication between hosts
+            // May need to do better than that, but for now, considering IP whitelisting, should be ok
+            commandsToRun
+                .WithDisableFirewall()
+                .Log();
 
             // final touches and reboot
             commandsToRun.WithDisableUAC(restartComputer: false);
