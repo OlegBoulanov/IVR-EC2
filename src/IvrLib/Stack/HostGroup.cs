@@ -8,7 +8,7 @@ namespace IvrLib
     {
         public IvrInstanceProps InstanceProps { get; set; } = new IvrInstanceProps();
         public IEnumerable<string> DownloadAndInstall { get; set; }
-        public string Install { get; set; }
+        public string InstallS3i { get; set; }
         public bool UseElasticIP { get; set; } = false;
         public int HostCount { get; set; } = 1;
     }

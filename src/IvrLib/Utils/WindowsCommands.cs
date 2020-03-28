@@ -163,10 +163,9 @@ namespace IvrLib
             WithCommands($"New-NetFirewallRule -Action Allow -Direction Inbound -RemoteAddress {remoteAddress} -RemotePort {remotePort??"Any"} -LocalPort {localPort??"Any"} -Protocol {protocol??"Any"} -DisplayName \"{displayName}\"");
             return this;
         }
-        public WindowsCommands WithRenameAndRestart(string newName)
+        public void WithRenameAndRestart(string newName)
         {
             WithCommands($"Rename-Computer {newName} -Force -Restart");
-            return this;
         }
         public void WithRestart(string args = "")
         {

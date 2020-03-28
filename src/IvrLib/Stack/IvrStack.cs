@@ -69,14 +69,13 @@ namespace IvrLib
                             RdpProps = schema.RdpProps,
                             EC2Users = schema.EC2Users,
                             DownloadAndInstall = group.DownloadAndInstall,
-                            S3iArgs = $"{group.Install} --verbose", 
+                            S3iArgs = $"{group.InstallS3i} --verbose", 
                         };
+                        var hostCommands = HostPriming.PrimeForS3i(hostPrimingProps)
+                            .WithFirewallAllowInbound($"{vpc.VpcCidrBlock}");
+                        hostCommands.WithRenameAndRestart(hostPrimingProps.HostName);
                         instanceProps.KeyName = schema.KeyPairName;
-                        instanceProps.UserData = HostPriming
-                            .PrimeForS3i(hostPrimingProps)
-                            .WithFirewallAllowInbound($"{vpc.VpcCidrBlock}")
-                            .WithRenameAndRestart(hostPrimingProps.HostName)
-                            .UserData;
+                        instanceProps.UserData = hostCommands.UserData;
                         hosts.Add(new HostInstance 
                         { 
                             Group = group, 
