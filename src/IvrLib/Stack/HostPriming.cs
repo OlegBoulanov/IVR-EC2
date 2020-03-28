@@ -57,15 +57,12 @@ namespace IvrLib
 
             // To allow SIP communication between hosts
             // May need to do better than that, but for now, considering IP whitelisting, should be ok
-            commandsToRun
-                .WithDisableFirewall()
-                .Log();
+            //commandsToRun
+            //    .WithDisableFirewall()
+            //    .Log();
 
             // final touches and reboot
             commandsToRun.WithDisableUAC(restartComputer: false);
-            if(!string.IsNullOrWhiteSpace(props.HostName)) {
-                commandsToRun.WithCommands($"Rename-Computer {props.HostName} -Force -Restart");
-            }
             // for some reason, separate restart does not work on instances with EIP attached ???
             //// anything else to do - before restarting?
             //commandsToRun.WithRestart("-Force"); // ...reboot to complete fixing UAC/renaming...

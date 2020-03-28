@@ -47,6 +47,7 @@ namespace IvrLib
                 AllowAllOutbound = schema.AllowAllOutbound,
             });
             securityGroupRules.ForEach(rule => securityGroup.WithSecurityGroupRule(rule));
+            securityGroup.WithSecurityGroupRule(new IngressRule(Peer.Ipv4($"{vpc.VpcCidrBlock}"), Port.AllTraffic()).WithDescription($"All intranet traffic"));
 
             // Finally - create our instances!
             var hosts = new List<HostInstance>();
@@ -70,7 +71,11 @@ namespace IvrLib
                             S3iArgs = $"{group.Install} --verbose", 
                         };
                         instanceProps.KeyName = schema.KeyPairName;
-                        instanceProps.UserData = HostPriming.PrimeForS3i(hostPrimingProps).UserData;
+                        instanceProps.UserData = HostPriming
+                            .PrimeForS3i(hostPrimingProps)
+                            .WithFirewallAllowInbound($"{vpc.VpcCidrBlock}")
+                            .WithRenameAndRestart(hostPrimingProps.HostName)
+                            .UserData;
                         hosts.Add(new HostInstance 
                         { 
                             Group = group, 

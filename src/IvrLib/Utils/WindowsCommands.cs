@@ -157,6 +157,17 @@ namespace IvrLib
             WithCommands($"Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False");
             return this;
         }
+        public WindowsCommands WithFirewallAllowInbound(string remoteAddress, string remotePort = null, string localPort = null, string protocol = null)
+        {
+            var displayName = $"Allow Inbound ({protocol??"*"}): {remoteAddress??"*"}:{remotePort??"*"} => {localPort??"*"}";
+            WithCommands($"New-NetFirewallRule -Action Allow -Direction Inbound -RemoteAddress {remoteAddress} -RemotePort {remotePort??"Any"} -LocalPort {localPort??"Any"} -Protocol {protocol??"Any"} -DisplayName \"{displayName}\"");
+            return this;
+        }
+        public WindowsCommands WithRenameAndRestart(string newName)
+        {
+            WithCommands($"Rename-Computer {newName} -Force -Restart");
+            return this;
+        }
         public void WithRestart(string args = "")
         {
             WithCommands($"Restart-Computer {args}");
