@@ -11,6 +11,7 @@ namespace IvrLib
     public class IvrSiteSchema
     {
         public IDictionary<string, string> Define { get; set; } = new Dictionary<string, string> {};
+        public IDictionary<string, string> Tags { get; set; } = new Dictionary<string, string> {};
         public IvrVpcProps VpcProps { get; set; } = new IvrVpcProps {};       
         public string KeyPairName { get; set; }
         public RdpProps RdpProps { get; set; }

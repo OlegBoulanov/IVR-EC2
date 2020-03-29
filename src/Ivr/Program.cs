@@ -54,17 +54,19 @@ namespace Ivr
             }
             var rdpIngressRules = schema.RdpProps.Cidrs.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), "RDP").WithDescription($"RDP client"));
             var sipIngressRules = SipProviders.Select(regionInfo.Name, schema.SipProviders, schema.IngressPorts);
-            //var allInternalTraffic = new IngressRule(Peer.Ipv4($"{schema.VpcProps.VpcCidrAddr}/{schema.VpcProps.VpcCidrMask}"), Port.AllTraffic()).WithDescription($"All intranet traffic");
-            new IvrStack(app, "IvrStack", new StackProps
-            {
-                Env = new Amazon.CDK.Environment
+            new IvrStack(app, "IvrStack", 
+                new StackProps
                 {
-                    Account = accountNumber,
-                    Region = regionInfo.Name,
+                    Env = new Amazon.CDK.Environment
+                    {
+                        Account = accountNumber,
+                        Region = regionInfo.Name,
+                    },
+                    Tags = schema.Tags,
                 },
-            }, 
-            schema,
-            rdpIngressRules.Concat(sipIngressRules));//.Append(allInternalTraffic));
+                schema,
+                rdpIngressRules.Concat(sipIngressRules)
+            );
             app.Synth();
         }
     }
