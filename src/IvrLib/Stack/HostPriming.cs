@@ -47,7 +47,7 @@ namespace IvrLib
             // If requested, install and run s3i to install the rest indirectly from specific remote configuration
             if(!string.IsNullOrWhiteSpace(props.S3iArgs)) {
                 commandsToRun
-                    .WithDownloadAndInstall($"https://github.com/OlegBoulanov/s3i/releases/download/v1.0.328/s3i.msi /quiet")
+                    .WithDownloadAndInstall($"{HostPrimingProps.S3iRelease} /quiet")
                     .WithEnvironmentVariable("s3i_args", $" --stage {workingFolder}\\s3i {props.S3iArgs}")
                     //.WithCommands("Restart-Service -Name s3i -Force")  // install products frome the line above - not before rename/restart !
                     .Log();
