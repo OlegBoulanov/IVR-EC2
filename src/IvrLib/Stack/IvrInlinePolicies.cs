@@ -5,6 +5,7 @@ using System.Linq;
 using Amazon.CDK.AWS.IAM;
 
 using IvrLib.Security;
+using IvrLib.Utils;
 
 namespace IvrLib
 {
@@ -12,8 +13,7 @@ namespace IvrLib
     {
         public IvrInlinePolicies(string account, string stackId, IvrSiteSchema schema)
         {
-            Add("IvrPolicy", new PolicyDocument(new PolicyDocumentProps {
-                Statements = new PolicyStatement[] {
+            var statements = new List<PolicyStatement> {
                     // Role is needed for allowing tools to use EC2 provided credentials
                     // see https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-role.html
                     new PolicyStatement().Allow().WithActions("sts:AssumeRole")
@@ -22,14 +22,6 @@ namespace IvrLib
                         .WithResources(),
                     new PolicyStatement().Allow().WithActions("s3:GetBucketLocation")
                         .WithResources(),
-                    new PolicyStatement().Allow().WithActions("s3:ListBucket")
-                        .WithResources(schema.S3BucketResources(schema.S3Buckets.ListBucket.ToArray())),
-                    new PolicyStatement().Allow().WithActions("s3:GetObject")
-                        .WithResources(schema.S3ObjectResources(schema.S3Buckets.GetObject.ToArray())),
-                    new PolicyStatement().Allow().WithActions("s3:PutObject")
-                        .WithResources(schema.S3ObjectResources(schema.S3Buckets.PutObject.ToArray())),
-                    new PolicyStatement().Allow().WithActions("s3:DeleteObject")
-                        .WithResources(schema.S3ObjectResources(schema.S3Buckets.DeleteObject.ToArray())),
                     new PolicyStatement().Allow().WithActions("sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:GetQueueUrl", "sqs:ReceiveMessage", "sqs:SendMessage")
                         .WithResources(),
                     new PolicyStatement().Allow().WithActions("cloudwatch:GetMetricData", "cloudwatch:GetMetricStatistics", "cloudwatch:ListMetrics", "cloudwatch:PutMetricData")
@@ -40,8 +32,21 @@ namespace IvrLib
                         .WithResources(),
                     new PolicyStatement().Allow().WithActions("events:PutEvents")
                         .WithResources(),
-                    },
-                }));
+            };
+            //
+            Allow(statements, schema, schema.S3Buckets.ListBucket, "", "s3:ListBucket");
+            Allow(statements, schema, schema.S3Buckets.GetObject, "/*", "s3:GetObject");
+            Allow(statements, schema, schema.S3Buckets.PutObject, "/*", "s3:PutObject");
+            Allow(statements, schema, schema.S3Buckets.DeleteObject, "/*", "s3:DeleteObject");
+            //
+            Add("IvrPolicy", new PolicyDocument(new PolicyDocumentProps { Statements = statements.ToArray(), }));
+        }
+        void Allow(IList<PolicyStatement> statements, IvrSiteSchema schema, IEnumerable<string> buckets, string suffix, params string [] actions)
+        {
+            if (null != buckets && 0 < buckets.Count())
+            {
+                statements.Add(new PolicyStatement().Allow().WithActions(actions).WithResources(schema.S3Resources(suffix, buckets.SelectMany(x => x.Csv()).ToArray())));
+            }
         }
     }
 }

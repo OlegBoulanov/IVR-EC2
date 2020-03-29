@@ -151,7 +151,22 @@ namespace IvrLib
                 return null;    // break the chain, triggering runtime error if misused
             }
             return this;
-        }        
+        }       
+        public WindowsCommands WithDisableFirewall() 
+        {
+            WithCommands($"Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False");
+            return this;
+        }
+        public WindowsCommands WithFirewallAllowInbound(string remoteAddress, string remotePort = null, string localPort = null, string protocol = null)
+        {
+            var displayName = $"Allow Inbound ({protocol??"*"}): {remoteAddress??"*"}:{remotePort??"*"} => {localPort??"*"}";
+            WithCommands($"New-NetFirewallRule -Action Allow -Direction Inbound -RemoteAddress {remoteAddress} -RemotePort {remotePort??"Any"} -LocalPort {localPort??"Any"} -Protocol {protocol??"Any"} -DisplayName \"{displayName}\"");
+            return this;
+        }
+        public void WithRenameAndRestart(string newName)
+        {
+            WithCommands($"Rename-Computer {newName} -Force -Restart");
+        }
         public void WithRestart(string args = "")
         {
             WithCommands($"Restart-Computer {args}");

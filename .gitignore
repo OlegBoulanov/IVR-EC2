@@ -5,6 +5,9 @@ cdk.out
 // hide account and certain detail
 cdk.context.json
 
+private/
+
+
 # Created by https://www.gitignore.io/api/csharp
 
 ### Csharp ###
