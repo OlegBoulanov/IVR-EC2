@@ -24,8 +24,8 @@ namespace IvrLib
         public IEnumerable<string> SipProviders { get; set; } = new List<string> { "Amazon", "Twilio", };
         public IEnumerable<PortSpec> IngressPorts { get; set; }
         public bool AllowAllOutbound { get; set; } = true;
-        public string S3Suffix { get; set; } = "something.unique"/*.<region>.amazonaws.com*/;
         public S3Buckets S3Buckets { get; set; }
+        public string S3iRelease { get; set; }
         public bool Validate()
         {
             if(string.IsNullOrWhiteSpace(KeyPairName) && (string.IsNullOrWhiteSpace(RdpProps.UserName) || string.IsNullOrWhiteSpace(RdpProps.Password))) 
@@ -44,11 +44,13 @@ namespace IvrLib
         {
             // Add RdpUser and/or Administrator to EC2Users
             if(null == EC2Users || 0 == EC2Users.Count()) EC2Users = new List<string> { RdpProps.UserName ?? "Administrator" };
+            // override defaults if values provided
+            if(!string.IsNullOrWhiteSpace(S3iRelease)) HostPrimingProps.S3iRelease = S3iRelease;
             return this;
         }
         public string [] S3Resources(string suffix, params string [] prefixes)
         {
-            var dotSuffix = string.IsNullOrWhiteSpace(S3Suffix) ? "" : $".{S3Suffix}";
+            var dotSuffix = string.IsNullOrWhiteSpace(S3Buckets.Suffix) ? "" : $".{S3Buckets.Suffix}";
             return prefixes.Select(prefix => $"arn:aws:s3:::{prefix}{dotSuffix}{suffix}").ToArray();
         }
         public static IvrSiteSchema FromString(string s)
