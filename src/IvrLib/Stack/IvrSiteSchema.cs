@@ -30,6 +30,8 @@ namespace IvrLib
         {
             if(string.IsNullOrWhiteSpace(KeyPairName) && (string.IsNullOrWhiteSpace(RdpProps.UserName) || string.IsNullOrWhiteSpace(RdpProps.Password))) 
                 throw new ArgumentException($"{nameof(KeyPairName)} or {nameof(RdpProps.UserName)} must not be provided");
+            if(!string.IsNullOrWhiteSpace(RdpProps.UserName) && string.IsNullOrWhiteSpace(RdpProps.Password)) 
+                throw new ArgumentException($"{nameof(RdpProps.Password)} must not be provided for {nameof(RdpProps.UserName)}");
             if(0 == SipProviders.Count()) 
                 throw new ArgumentException($"No SIP Providers defined in schema");
             if(null == RdpProps.UserGroups || !RdpProps.UserGroups.Contains("RdpUsers")) 
