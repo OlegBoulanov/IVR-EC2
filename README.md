@@ -1,10 +1,10 @@
 # IVR-EC2
 
 AWS CDK study:
-- build/execute both on Linux and Windows
+- build/execute CDK project on both Linux and Windows
 - separate public structure and private settings (context)
 
-There is no private information in this project, it's rather a set of Windows/VoIP recipes
+There is no private information in this project, it's rather a collection of Windows/SIP Providers recipes from public sources
 
 Prerequisites:
 - AWS CDK installed
@@ -14,12 +14,9 @@ Prerequisites:
 Site Deployment example:
 - git clone https://github.com/OlegBoulanov/IVR-EC2
 - cd IVR-EC2
-- cdk deploy  -c region=us-east-1  -c schema=~/Projects/IVR/siteOne.yaml
+- (current credentials in ~/.aws/credentials [profile-name])
+- cdk deploy --profile "profile-name"  -c region=us-east-1  -c schema=~/Projects/site-schema.yaml
 
-Lifecycle (run in project directory):
-- cdk synth (will create cdk.context.json, if does not exist)
-- cdk deploy -v
-- cdk destroy -v
 
 References
 
