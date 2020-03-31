@@ -18,5 +18,7 @@ namespace IvrLib.Utils
             }
             throw new NotImplementedException($"Not implemented for {addr.AddressFamily} yet");
         }
+        public static bool IsPrivate(this IPAddress addr) => CIDR.IsPrivate(addr);
+        public static bool IsPublic(this IPAddress addr) => CIDR.IsPublic(addr);
     }
 }

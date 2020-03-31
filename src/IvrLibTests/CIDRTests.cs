@@ -32,6 +32,12 @@ namespace IvrLibTests
             Assert.AreEqual(new byte[] { 192, 0, 0, 1 }, addr.GetAddressBytes());
             var addr1 = addr.Increment(5);
             Assert.AreEqual(new byte[] { 192, 0, 0, 6 }, addr1.GetAddressBytes());
+            Assert.IsTrue(IPAddress.Parse("10.0.0.0").IsPrivate());
+            Assert.IsTrue(IPAddress.Parse("172.16.0.0").IsPrivate());
+            Assert.IsTrue(IPAddress.Parse("172.31.255.255").IsPrivate());
+            Assert.IsTrue(IPAddress.Parse("172.32.0.0").IsPublic());
+            Assert.IsTrue(IPAddress.Parse("172.200.0.0").IsPublic());
+            Assert.IsTrue(IPAddress.Parse("192.168.0.0").IsPrivate());
         }
         [Test]
         public void Addresses2()
