@@ -101,24 +101,28 @@ namespace IvrLib
                     //Comment = "HostedZone created by Route53 Registrar",
                 });
                 // assign Elastic IPs as needed
-                var eips = hosts.Where(h => h.Group.UseElasticIP).Select(h =>
+                if (string.IsNullOrWhiteSpace(schema.SubdomainEIPs))
                 {
-                    return new CfnEIP(this, $"EIP_{h.Instance.InstancePrivateIp}_".AsCloudFormationId(), new CfnEIPProps
+                    var newElasticIPs = hosts.Where(h => h.Group.UseElasticIP).Select(h =>
                     {
-                        Domain = "vpc", // 'standard' or 'vpc': https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-eip.html#cfn-ec2-eip-domain
-                        InstanceId = h.Instance.InstanceId,
-                    });
-                }).ToList();   // collect them now to avoid lazy enum count lunacy
-                if (0 < eips.Count && !string.IsNullOrWhiteSpace(schema.SubdomainEIPs))
-                {
-                    // register (permanent) Elastic IPs
-                    var arPublic = new ARecord(this, $"ARecord_Public_".AsCloudFormationId(), new ARecordProps
+                        return new CfnEIP(this, $"EIP{h.Instance.InstancePrivateIp}".AsCloudFormationId(), new CfnEIPProps
+                        {
+                            // 'standard' or 'vpc': https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-eip.html#cfn-ec2-eip-domain
+                            Domain = "vpc",
+                            InstanceId = h.Instance.InstanceId,
+                        });
+                    }).ToList();   // collect them now to prevent LINQ Count side effects
+                    if (0 < newElasticIPs.Count)
                     {
-                        Zone = theZone,
-                        RecordName = $"{schema.SubdomainEIPs}.{theZone.ZoneName}",
-                        Target = RecordTarget.FromValues(eips.Select(eip => eip.Ref).ToArray()),
-                        Ttl = Duration.Seconds(300),
-                    });
+                        // register (permanent) Elastic IPs
+                        var arPublic = new ARecord(this, $"ARecord_Public_".AsCloudFormationId(), new ARecordProps
+                        {
+                            Zone = theZone,
+                            RecordName = $"{schema.SubdomainEIPs}.{theZone.ZoneName}",
+                            Target = RecordTarget.FromValues(newElasticIPs.Select(eip => eip.Ref).ToArray()),
+                            Ttl = Duration.Seconds(300),
+                        });
+                    }
                 }
                 if(0 < hosts.Count && !string.IsNullOrWhiteSpace(schema.SubdomainHosts))
                 {
@@ -131,7 +135,6 @@ namespace IvrLib
                         Ttl = Duration.Seconds(300),
                     });
                 }
-                Console.WriteLine($"EIPS[{eips.Count}]");
                 //throw new Exception();
             }
         }

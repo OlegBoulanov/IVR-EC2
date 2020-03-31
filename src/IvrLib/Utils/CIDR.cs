@@ -1,4 +1,6 @@
 using System;
+using System.Net;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,20 +8,33 @@ namespace IvrLib.Utils
 {
     public class CIDR
     {
-        IPAddress Address { get; set; } = null;
-        int NetMaskBitCount { get; set; } = 0;
-        public bool IsValid { get { return 0 < NetMaskBitCount && AddressFamily.InterNetwork == Address?.AddressFamily; } }
+        public IPAddress Address { get; set; } = null;
+        public int NetMaskBitCount { get; set; } = 0;
+        public bool IsValid 
+        {
+            get
+            {
+                if (AddressFamily.InterNetwork == Address?.AddressFamily)
+                {
+                    var bits = BitConverter.ToInt32(Address.GetAddressBytes(), 0); // 192.0.0.1 => 0x01_00_00_c0
+                    var mask = 0xffffffff >> (32 - NetMaskBitCount);
+                    return 0 == (bits & ~mask);
+                }
+                throw new NotImplementedException($"Not implemented for {Address?.AddressFamily} yet");
+            } 
+        }
         public bool Includes(IPAddress a)
         {
-            if (AddressFamily.InterNetwork == a.AddressFamily)
+            if (AddressFamily.InterNetwork == a?.AddressFamily)
             {
                 var ipAddressBytes = BitConverter.ToInt32(a.GetAddressBytes(), 0);
                 var cidrAddressBytes = BitConverter.ToInt32(Address.GetAddressBytes(), 0);
                 var cidrMaskBytes = IPAddress.HostToNetworkOrder(-1 << (32 - NetMaskBitCount));
                 return (ipAddressBytes & cidrMaskBytes) == (cidrAddressBytes & cidrMaskBytes);
             }
-            throw new NotFiniteNumberException($"Not implemented for {a.AddressFamily} yet");
+            throw new NotImplementedException($"Not implemented for {a?.AddressFamily} yet");
         }
+        //
         public override int GetHashCode()
         {
             return (null == Address ? 0 : Address.GetHashCode()) + NetMaskBitCount;
@@ -33,7 +48,7 @@ namespace IvrLib.Utils
         {
             return $"{Address}/{NetMaskBitCount}";
         }
-        static public bool TryParse(string s, out CIDR cidr)
+        public static bool TryParse(string s, out CIDR cidr)
         {
             var p = s.IndexOf('/');
             if (7 /*a.b.c.d*/ <= p
@@ -54,6 +69,10 @@ namespace IvrLib.Utils
         public static bool IsPrivate(IPAddress addr)
         {
             return Private10.Includes(addr) || Private172.Includes(addr) || Private192.Includes(addr);
+        }
+        public static bool IsPublic(IPAddress addr) 
+        {
+            return !IsPrivate(addr);
         }
         public static readonly CIDR Private10 = Parse("10.0.0.0/8"), Private172 = Parse("172.16.0.0/12"), Private192 = Parse("192.168.0.0/16");
     }
