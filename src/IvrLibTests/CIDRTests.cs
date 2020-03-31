@@ -24,6 +24,8 @@ namespace IvrLibTests
             Assert.IsFalse(CIDR.IsPublic(cidr.Address));
             Assert.IsTrue(CIDR.Parse("10.0.0.0/16").IsValid);
             Assert.IsFalse(CIDR.Parse("10.0.1.0/16").IsValid);
+            Assert.IsTrue(CIDR.Parse("10.0.0.0/8").IsValid);
+            Assert.IsFalse(CIDR.Parse("10.1.0.0/8").IsValid);
         }
         [Test]
         public void IPAddresseExtensions()

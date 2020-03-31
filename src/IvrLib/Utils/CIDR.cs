@@ -17,8 +17,8 @@ namespace IvrLib.Utils
                 if (AddressFamily.InterNetwork == Address?.AddressFamily)
                 {
                     var bits = BitConverter.ToInt32(Address.GetAddressBytes(), 0); // 192.0.0.1 => 0x01_00_00_c0
-                    var mask = 0xffffffff >> (32 - NetMaskBitCount);
-                    return 0 == (bits & ~mask);
+                    var mask = 0xffffffff << NetMaskBitCount;
+                    return 0 == (bits & mask);
                 }
                 throw new NotImplementedException($"Not implemented for {Address?.AddressFamily} yet");
             } 
