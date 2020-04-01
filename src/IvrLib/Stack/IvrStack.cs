@@ -101,7 +101,7 @@ namespace IvrLib
                     //Comment = "HostedZone created by Route53 Registrar",
                 });
                 // assign Elastic IPs as needed
-                if (string.IsNullOrWhiteSpace(schema.SubdomainEIPs))
+                if (!string.IsNullOrWhiteSpace(schema.SubdomainEIPs))
                 {
                     var newElasticIPs = hosts.Where(h => h.Group.UseElasticIP).Select(h =>
                     {
