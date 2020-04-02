@@ -28,7 +28,7 @@ namespace IvrLib
                         .WithResources(),
                     new PolicyStatement().Allow().WithActions("sns:Publish")
                         .WithResources(),
-                    new PolicyStatement().Allow().WithActions("ses:SendEmail")
+                    new PolicyStatement().Allow().WithActions("ses:SendEmail", "ses:SendRawEmail")
                         .WithResources(),
                     new PolicyStatement().Allow().WithActions("events:PutEvents")
                         .WithResources(),
