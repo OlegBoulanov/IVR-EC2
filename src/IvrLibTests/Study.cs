@@ -110,12 +110,12 @@ namespace IvrLibTests
                 },
                 HostGroups = new List<HostGroup> {
                     new HostGroup {
-                        UseElasticIP = true,
+                        AllocateElasticIPs = true,
                         HostCount = 2,
                         InstallS3i = "https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini",
                     },
                     new HostGroup {
-                        UseElasticIP = false,
+                        AllocateElasticIPs = false,
                         HostCount = 16,
                         InstallS3i = "https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini",
                     },

@@ -103,7 +103,7 @@ namespace IvrLib
                 // assign Elastic IPs as needed
                 if (!string.IsNullOrWhiteSpace(schema.SubdomainEIPs))
                 {
-                    var newElasticIPs = hosts.Where(h => h.Group.UseElasticIP).Select(h =>
+                    var newElasticIPs = hosts.Where(h => h.Group.AllocateElasticIPs).Select(h =>
                     {
                         return new CfnEIP(this, $"EIP{h.Instance.InstancePrivateIp}".AsCloudFormationId(), new CfnEIPProps
                         {
