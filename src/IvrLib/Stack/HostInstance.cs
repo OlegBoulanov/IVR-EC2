@@ -10,5 +10,6 @@ namespace IvrLib
     {
         public Instance_ Instance { get; set; }
         public HostGroup Group { get; set; }
+        public string ElasticIPAllocationId { get; set; }
     }
 }

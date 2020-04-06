@@ -21,6 +21,7 @@ namespace IvrLib
         public string SubdomainEIPs { get; set; }
         public string SubdomainHosts { get; set; }
         public string HostNamePrefix { get; set; } = "CH-";
+        public IEnumerable<string> PreAllocatedElasticIPs { get; set; }
         public IEnumerable<HostGroup> HostGroups { get; set; }
         public IEnumerable<string> SipProviders { get; set; } = new List<string> { "Amazon", "Twilio", };
         public IEnumerable<PortSpec> IngressPorts { get; set; }
@@ -47,6 +48,15 @@ namespace IvrLib
             if(null == EC2Users || 0 == EC2Users.Count()) EC2Users = new List<string> { RdpProps.UserName ?? "Administrator" };
             // override defaults if values provided
             if(!string.IsNullOrWhiteSpace(S3iRelease)) HostPrimingProps.S3iRelease = S3iRelease;
+            // unwind csvs
+            PreAllocatedElasticIPs = PreAllocatedElasticIPs.SelectMany(s => s.Csv());
+            var preAllocatedElasticIPsAvailable = PreAllocatedElasticIPs.Count();
+            var preAllocatedElasticIPsNeeded = HostGroups.Where(hg => hg.UsePreAllocatedElasticIPs).Count() * VpcProps.MaxAzs;
+            if(preAllocatedElasticIPsAvailable < preAllocatedElasticIPsNeeded)
+            {
+                throw new ArgumentException($"Pre-allocated IPs: available={preAllocatedElasticIPsAvailable} < needed={preAllocatedElasticIPsNeeded}");
+            }
+            Console.WriteLine($"Pre-allocated IPs: {preAllocatedElasticIPsNeeded} will be used, out of {preAllocatedElasticIPsAvailable} available");
             return this;
         }
         public string [] S3Resources(string suffix, params string [] prefixes)

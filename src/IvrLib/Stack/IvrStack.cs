@@ -50,14 +50,20 @@ namespace IvrLib
             securityGroup.WithSecurityGroupRule(new IngressRule(Peer.Ipv4($"{vpc.VpcCidrBlock}"), Port.AllTraffic()).WithDescription($"All intranet traffic"));
 
             // Finally - create our instances!
+            var eipAllocationIds = schema.PreAllocatedElasticIPs.ToList();
             var hosts = new List<HostInstance>();
             for(var subnetIndex = 0; ++subnetIndex <= vpc.PublicSubnets.Length; )
             {
                 var hostIndexInSubnet = 0;
                 foreach(var group in schema.HostGroups)
                 {
+                    var numberOfHosts = Math.Min(group.HostCount, IvrVpcProps.MaxIpsPerSubnet);
+                    if(numberOfHosts != group.HostCount) {
+                        Console.WriteLine($"Group({group.Name}) host count changed from {group.HostCount} to {numberOfHosts}");
+                        group.HostCount = numberOfHosts;
+                    }
                     var instanceProps = IvrInstanceProps.InstanceProps(vpc, vpc.PublicSubnets[subnetIndex - 1], role, securityGroup, group.InstanceProps);
-                    for (var hostCount = 0; ++hostCount <= Math.Min(group.HostCount, IvrVpcProps.MaxIpsPerSubnet); ++hostIndexInSubnet)
+                    for (var hostCount = 0; ++hostCount <= numberOfHosts; ++hostIndexInSubnet)
                     {
                         var hostName = $"{schema.HostNamePrefix}{subnetIndex}{hostIndexInSubnet:00}";
                         var hostPrimingProps = new HostPrimingProps
@@ -76,13 +82,38 @@ namespace IvrLib
                         hostCommands.WithRenameAndRestart(hostPrimingProps.HostName);
                         instanceProps.KeyName = schema.KeyPairName;
                         instanceProps.UserData = hostCommands.UserData;
-                        hosts.Add(new HostInstance 
+                        var host = new HostInstance 
                         { 
                             Group = group, 
                             Instance = new Instance_(this, hostName.AsCloudFormationId(), instanceProps), 
-                        });
+                        };
+                        if(group.UsePreAllocatedElasticIPs)
+                        {
+                            if (0 < eipAllocationIds.Count)
+                            {
+                                host.ElasticIPAllocationId = eipAllocationIds.First();
+                                eipAllocationIds.RemoveAt(0);
+                            }
+                            else
+                            {
+                                throw new ApplicationException($"Ran out of pre-allocated elastic IPs");
+                            }
+                        }
+                        hosts.Add(host);
                     }
                 }
+            }
+            // associate pre-allocated EIPs
+            var elasticIPAssociations = hosts.Where(h => !string.IsNullOrWhiteSpace(h.ElasticIPAllocationId)).Select(h =>
+            {
+                return new CfnEIPAssociation(this, $"EIPA{h.Instance.InstancePrivateIp}".AsCloudFormationId(), new CfnEIPAssociationProps
+                {
+                    AllocationId = h.ElasticIPAllocationId,
+                    InstanceId = h.Instance.InstanceId,
+                });
+            }).ToList();    // execute LINQ now
+            foreach(var a in elasticIPAssociations) {
+                Console.WriteLine($"Pre-Allocated Elastic IP Associations: {a.AllocationId}/{a.InstanceId}");
             }
             // Create new Route53 zone           
             //var theZone = new PublicHostedZone(this, $"{stackId}_Zone", new PublicHostedZoneProps
@@ -100,10 +131,10 @@ namespace IvrLib
                     DomainName = schema.HostedZoneDomain,
                     //Comment = "HostedZone created by Route53 Registrar",
                 });
-                // assign Elastic IPs as needed
+                // assign new Elastic IPs as needed
                 if (!string.IsNullOrWhiteSpace(schema.SubdomainEIPs))
                 {
-                    var newElasticIPs = hosts.Where(h => h.Group.AllocateElasticIPs).Select(h =>
+                    var newElasticIPs = hosts.Where(h => h.Group.AllocateNewElasticIPs).Select(h =>
                     {
                         return new CfnEIP(this, $"EIP{h.Instance.InstancePrivateIp}".AsCloudFormationId(), new CfnEIPProps
                         {
@@ -115,7 +146,7 @@ namespace IvrLib
                     if (0 < newElasticIPs.Count)
                     {
                         // register (permanent) Elastic IPs
-                        var arPublic = new ARecord(this, $"ARecord_Public_".AsCloudFormationId(), new ARecordProps
+                        var arPublic = new ARecord(this, $"ARecord_Public_NewAlloc".AsCloudFormationId(), new ARecordProps
                         {
                             Zone = theZone,
                             RecordName = $"{schema.SubdomainEIPs}.{theZone.ZoneName}",
