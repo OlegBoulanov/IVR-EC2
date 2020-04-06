@@ -50,7 +50,6 @@ namespace IvrLib
             securityGroup.WithSecurityGroupRule(new IngressRule(Peer.Ipv4($"{vpc.VpcCidrBlock}"), Port.AllTraffic()).WithDescription($"All intranet traffic"));
 
             // Finally - create our instances!
-            var eipAllocationIds = schema.PreAllocatedElasticIPs.ToList();
             var hosts = new List<HostInstance>();
             for(var subnetIndex = 0; ++subnetIndex <= vpc.PublicSubnets.Length; )
             {
@@ -82,33 +81,26 @@ namespace IvrLib
                         hostCommands.WithRenameAndRestart(hostPrimingProps.HostName);
                         instanceProps.KeyName = schema.KeyPairName;
                         instanceProps.UserData = hostCommands.UserData;
-                        var host = new HostInstance 
+                        hosts.Add(new HostInstance 
                         { 
                             Group = group, 
                             Instance = new Instance_(this, hostName.AsCloudFormationId(), instanceProps), 
-                        };
-                        if(group.UsePreAllocatedElasticIPs)
-                        {
-                            if (0 < eipAllocationIds.Count)
-                            {
-                                host.ElasticIPAllocationId = eipAllocationIds.First();
-                                eipAllocationIds.RemoveAt(0);
-                            }
-                            else
-                            {
-                                throw new ApplicationException($"Ran out of pre-allocated elastic IPs");
-                            }
-                        }
-                        hosts.Add(host);
+                        });
                     }
                 }
             }
             // associate pre-allocated EIPs
-            var elasticIPAssociations = hosts.Where(h => !string.IsNullOrWhiteSpace(h.ElasticIPAllocationId)).Select(h =>
+            var preAllocatedEIPs = schema.PreAllocatedElasticIPs.SelectMany(s => s.Csv());
+            var hostsThatRequireEIP = hosts.Where(h => h.Group.UsePreAllocatedElasticIPs);
+            if(preAllocatedEIPs.Count() < hostsThatRequireEIP.Count())
+            {
+                throw new ArgumentException($"Pre-Allocated Elastic IPs needed: {hostsThatRequireEIP.Count()}, but only {preAllocatedEIPs.Count()} configured in schema.{nameof(IvrSiteSchema.PreAllocatedElasticIPs)}");
+            }
+            var elasticIPAssociations = hostsThatRequireEIP.Zip(preAllocatedEIPs, (h, a) =>
             {
                 return new CfnEIPAssociation(this, $"EIPA{h.Instance.InstancePrivateIp}".AsCloudFormationId(), new CfnEIPAssociationProps
                 {
-                    AllocationId = h.ElasticIPAllocationId,
+                    AllocationId = a,
                     InstanceId = h.Instance.InstanceId,
                 });
             }).ToList();    // execute LINQ now
