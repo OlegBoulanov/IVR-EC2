@@ -21,6 +21,7 @@ namespace IvrLib
         public string SubdomainEIPs { get; set; }
         public string SubdomainHosts { get; set; }
         public string HostNamePrefix { get; set; } = "CH-";
+        public IEnumerable<string> PreAllocatedElasticIPs { get; set; }
         public IEnumerable<HostGroup> HostGroups { get; set; }
         public IEnumerable<string> SipProviders { get; set; } = new List<string> { "Amazon", "Twilio", };
         public IEnumerable<PortSpec> IngressPorts { get; set; }

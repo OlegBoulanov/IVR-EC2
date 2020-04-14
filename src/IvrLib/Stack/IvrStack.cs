@@ -56,8 +56,13 @@ namespace IvrLib
                 var hostIndexInSubnet = 0;
                 foreach(var group in schema.HostGroups)
                 {
+                    var numberOfHosts = Math.Min(group.HostCount, IvrVpcProps.MaxIpsPerSubnet);
+                    if(numberOfHosts != group.HostCount) {
+                        Console.WriteLine($"Group({group.Name}) host count changed from {group.HostCount} to {numberOfHosts}");
+                        group.HostCount = numberOfHosts;
+                    }
                     var instanceProps = IvrInstanceProps.InstanceProps(vpc, vpc.PublicSubnets[subnetIndex - 1], role, securityGroup, group.InstanceProps);
-                    for (var hostCount = 0; ++hostCount <= Math.Min(group.HostCount, IvrVpcProps.MaxIpsPerSubnet); ++hostIndexInSubnet)
+                    for (var hostCount = 0; ++hostCount <= numberOfHosts; ++hostIndexInSubnet)
                     {
                         var hostName = $"{schema.HostNamePrefix}{subnetIndex}{hostIndexInSubnet:00}";
                         var hostPrimingProps = new HostPrimingProps
@@ -84,6 +89,24 @@ namespace IvrLib
                     }
                 }
             }
+            // associate pre-allocated EIPs
+            var preAllocatedEIPs = schema.PreAllocatedElasticIPs.SelectMany(s => s.Csv());
+            var hostsThatRequireEIP = hosts.Where(h => h.Group.UsePreAllocatedElasticIPs);
+            if(preAllocatedEIPs.Count() < hostsThatRequireEIP.Count())
+            {
+                throw new ArgumentException($"Pre-Allocated Elastic IPs needed: {hostsThatRequireEIP.Count()}, but only {preAllocatedEIPs.Count()} configured in schema.{nameof(IvrSiteSchema.PreAllocatedElasticIPs)}");
+            }
+            var elasticIPAssociations = hostsThatRequireEIP.Zip(preAllocatedEIPs, (h, a) =>
+            {
+                return new CfnEIPAssociation(this, $"EIPA{h.Instance.InstancePrivateIp}".AsCloudFormationId(), new CfnEIPAssociationProps
+                {
+                    AllocationId = a,
+                    InstanceId = h.Instance.InstanceId,
+                });
+            }).ToList();    // execute LINQ now
+            foreach(var a in elasticIPAssociations) {
+                Console.WriteLine($"Pre-Allocated Elastic IP Associations: {a.AllocationId}/{a.InstanceId}");
+            }
             // Create new Route53 zone           
             //var theZone = new PublicHostedZone(this, $"{stackId}_Zone", new PublicHostedZoneProps
             //{
@@ -100,25 +123,29 @@ namespace IvrLib
                     DomainName = schema.HostedZoneDomain,
                     //Comment = "HostedZone created by Route53 Registrar",
                 });
-                // assign Elastic IPs as needed
-                var eips = hosts.Where(h => h.Group.UseElasticIP).Select(h =>
+                // assign new Elastic IPs as needed
+                if (!string.IsNullOrWhiteSpace(schema.SubdomainEIPs))
                 {
-                    return new CfnEIP(this, $"EIP_{h.Instance.InstancePrivateIp}_".AsCloudFormationId(), new CfnEIPProps
+                    var newElasticIPs = hosts.Where(h => h.Group.AllocateNewElasticIPs).Select(h =>
                     {
-                        Domain = "vpc", // 'standard' or 'vpc': https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-eip.html#cfn-ec2-eip-domain
-                        InstanceId = h.Instance.InstanceId,
-                    });
-                }).ToList();   // collect them now to avoid lazy enum count lunacy
-                if (0 < eips.Count && !string.IsNullOrWhiteSpace(schema.SubdomainEIPs))
-                {
-                    // register (permanent) Elastic IPs
-                    var arPublic = new ARecord(this, $"ARecord_Public_".AsCloudFormationId(), new ARecordProps
+                        return new CfnEIP(this, $"EIP{h.Instance.InstancePrivateIp}".AsCloudFormationId(), new CfnEIPProps
+                        {
+                            // 'standard' or 'vpc': https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-eip.html#cfn-ec2-eip-domain
+                            Domain = "vpc",
+                            InstanceId = h.Instance.InstanceId,
+                        });
+                    }).ToList();   // collect them now to prevent LINQ Count side effects
+                    if (0 < newElasticIPs.Count)
                     {
-                        Zone = theZone,
-                        RecordName = $"{schema.SubdomainEIPs}.{theZone.ZoneName}",
-                        Target = RecordTarget.FromValues(eips.Select(eip => eip.Ref).ToArray()),
-                        Ttl = Duration.Seconds(300),
-                    });
+                        // register (permanent) Elastic IPs
+                        var arPublic = new ARecord(this, $"ARecord_Public_NewAlloc".AsCloudFormationId(), new ARecordProps
+                        {
+                            Zone = theZone,
+                            RecordName = $"{schema.SubdomainEIPs}.{theZone.ZoneName}",
+                            Target = RecordTarget.FromValues(newElasticIPs.Select(eip => eip.Ref).ToArray()),
+                            Ttl = Duration.Seconds(300),
+                        });
+                    }
                 }
                 if(0 < hosts.Count && !string.IsNullOrWhiteSpace(schema.SubdomainHosts))
                 {
@@ -131,7 +158,6 @@ namespace IvrLib
                         Ttl = Duration.Seconds(300),
                     });
                 }
-                Console.WriteLine($"EIPS[{eips.Count}]");
                 //throw new Exception();
             }
         }

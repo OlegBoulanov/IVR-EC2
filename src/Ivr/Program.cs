@@ -8,6 +8,8 @@ using Amazon.CDK;
 using Amazon.CDK.AWS.EC2;
 using Amazon.CDK.RegionInfo;
 
+using Amazon.SecurityToken;
+using Amazon.SecurityToken.Model;
 
 using IvrLib;
 using IvrLib.Security;
@@ -26,9 +28,14 @@ namespace Ivr
             var ctx = Context.FromJsonFiles($"{OSAgnostic.Home}/cdk.json", $"cdk.json", app.Node.TryGetContext("ctx") as string);
 
             // Mandatory parameters are not a part of the schema
-            var accountNumber = app.Node.Resolve(ctx, "account", "CDK_DEFAULT_ACCOUNT");
-            if(string.IsNullOrWhiteSpace(accountNumber)) throw new ArgumentException($"No account number provided");
-            var regionName = app.Node.Resolve(ctx, "region", "CDK_DEFAULT_REGION");
+            var accountNumber = app.Node.Resolve(ctx, "account", "CDK_DEFAULT_ACCOUNT");//, $"Please provide account number: -c account=<number>");
+            if(string.IsNullOrWhiteSpace(accountNumber)) {
+                accountNumber = new AmazonSecurityTokenServiceClient().GetCallerIdentityAsync(new GetCallerIdentityRequest()).Result.Account;
+                if(string.IsNullOrWhiteSpace(accountNumber)) {
+                    throw new ArgumentException($"No account number returned by AWS STS");
+                }
+            }
+            var regionName = app.Node.Resolve(ctx, "region", "CDK_DEFAULT_REGION", $"Please provide AWS region: -c region=<region>");
             var regionInfo = RegionInfo.Get(regionName);
             Console.WriteLine($"Account: {accountNumber}/{regionInfo?.Name}, {regionInfo?.DomainSuffix}");
             if(string.IsNullOrWhiteSpace(regionInfo?.DomainSuffix)) throw new ArgumentException($"Invalid region: '{regionName}'");

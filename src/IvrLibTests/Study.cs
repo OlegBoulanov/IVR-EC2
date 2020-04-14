@@ -28,8 +28,9 @@ namespace IvrLibTests
             Assert.IsTrue(0 == list?.Count());
             Assert.IsFalse(0 < list?.Count());
             list = null;
-            Assert.IsFalse(0 == list?.Count());
             Assert.IsFalse(0 < list?.Count());
+            Assert.IsFalse(0 == list?.Count());
+            Assert.IsFalse(list?.Count() < 0);
             Assert.IsTrue(0 == (list?.Count() ?? 0));
         }
         [Test]
@@ -110,12 +111,12 @@ namespace IvrLibTests
                 },
                 HostGroups = new List<HostGroup> {
                     new HostGroup {
-                        UseElasticIP = true,
+                        AllocateNewElasticIPs = true,
                         HostCount = 2,
                         InstallS3i = "https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini",
                     },
                     new HostGroup {
-                        UseElasticIP = false,
+                        AllocateNewElasticIPs = false,
                         HostCount = 16,
                         InstallS3i = "https://raw.githubusercontent.com/OlegBoulanov/s3i/develop/Examples/Config.ini",
                     },
