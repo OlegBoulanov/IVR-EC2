@@ -10,6 +10,7 @@ namespace IvrLib
 {
     public class IvrSiteSchema
     {
+        public string SiteName { get; set; }
         public IDictionary<string, string> Define { get; set; } = new Dictionary<string, string> {};
         public IDictionary<string, string> Tags { get; set; } = new Dictionary<string, string> {};
         public IvrVpcProps VpcProps { get; set; } = new IvrVpcProps {};       
@@ -30,6 +31,7 @@ namespace IvrLib
         public string S3iRelease { get; set; }
         public bool Validate()
         {
+            if(string.IsNullOrWhiteSpace(SiteName)) throw new ArgumentException($"{nameof(SiteName)} is not set or empty");
             if(string.IsNullOrWhiteSpace(KeyPairName) && (string.IsNullOrWhiteSpace(RdpProps.UserName) || string.IsNullOrWhiteSpace(RdpProps.Password))) 
                 throw new ArgumentException($"{nameof(KeyPairName)} or {nameof(RdpProps.UserName)} must not be provided");
             if(!string.IsNullOrWhiteSpace(RdpProps.UserName) && string.IsNullOrWhiteSpace(RdpProps.Password)) 

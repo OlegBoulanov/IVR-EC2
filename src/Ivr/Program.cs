@@ -61,7 +61,7 @@ namespace Ivr
             }
             var rdpIngressRules = schema.RdpProps.Cidrs.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), "RDP").WithDescription($"RDP client"));
             var sipIngressRules = SipProviders.Select(regionInfo.Name, schema.SipProviders, schema.IngressPorts);
-            new IvrStack(app, "IvrStack", 
+            new IvrStack(app, $"IvrStack-{schema.SiteName}", 
                 new StackProps
                 {
                     Env = new Amazon.CDK.Environment
