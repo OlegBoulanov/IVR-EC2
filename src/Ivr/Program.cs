@@ -40,16 +40,20 @@ namespace Ivr
             Console.WriteLine($"Account: {accountNumber}/{regionInfo?.Name}, {regionInfo?.DomainSuffix}");
             if(string.IsNullOrWhiteSpace(regionInfo?.DomainSuffix)) throw new ArgumentException($"Invalid region: '{regionName}'");
 
-            var schemaFileName = app.Node.Resolve(ctx, "schema", help: "Schema file name required");
-            Console.WriteLine($"Schema [{schemaFileName}]");
+            var schemaFilePath = app.Node.Resolve(ctx, "schema", help: "Schema file path required: -c schema=<path_to_schema_yaml>");
+            Console.WriteLine($"Schema [{schemaFilePath}]");
             IvrSiteSchema schema;
-            using (var sr = new StreamReader(schemaFileName))
+            using (var sr = new StreamReader(schemaFilePath))
             {
-                var ext = Path.GetExtension(schemaFileName).ToLower();
+                var ext = Path.GetExtension(schemaFilePath).ToLower();
                 if (".yaml" == ext)
                 {
                     schema = IvrSiteSchema.FromString(System.Environment.ExpandEnvironmentVariables(sr.ReadToEnd()));
                     Console.WriteLine(new YamlDotNet.Serialization.SerializerBuilder().Build().Serialize(schema));
+                    if(string.IsNullOrWhiteSpace(schema.SiteName)) {
+                        var fileName = Path.GetFileNameWithoutExtension(schemaFilePath);
+                        schema.SiteName = fileName;
+                    }
                     schema.Validate();
                     schema.Preprocess();
                 }
@@ -61,7 +65,7 @@ namespace Ivr
             }
             var rdpIngressRules = schema.RdpProps.Cidrs.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), "RDP").WithDescription($"RDP client"));
             var sipIngressRules = SipProviders.Select(regionInfo.Name, schema.SipProviders, schema.IngressPorts);
-            new IvrStack(app, $"IvrStack-{schema.SiteName}", 
+            new IvrStack(app, $"IvrStack-{schema.SiteName}".AsCloudFormationId(), 
                 new StackProps
                 {
                     Env = new Amazon.CDK.Environment
