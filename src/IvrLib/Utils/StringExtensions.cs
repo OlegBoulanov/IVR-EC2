@@ -14,7 +14,7 @@ namespace IvrLib.Utils
         }
         public static string AsCloudFormationId(this string s)
         {
-            return s.ReplaceCharsWith('_');
+            return s.ReplaceCharsWith('-');
         }
         public static string AsWindowsFolder(this string s)
         {
