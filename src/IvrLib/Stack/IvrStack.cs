@@ -10,7 +10,6 @@ using Amazon.CDK;
 using Amazon.CDK.AWS.EC2;
 using Amazon.CDK.AWS.IAM;
 using Amazon.CDK.AWS.Route53;
-//using Amazon.CDK.AWS.Route53;
 using Amazon.CDK.AWS.SNS;
 using Amazon.CDK.AWS.SNS.Subscriptions;
 using Amazon.CDK.AWS.SQS;
@@ -24,15 +23,30 @@ namespace IvrLib
     {
         public IvrStack(Construct scope, string stackId, StackProps stackProps, IvrSiteSchema schema, IEnumerable<SecurityGroupRule> securityGroupRules) : base(scope, stackId, stackProps)
         {
-            // We'll start with brand new VPC
-            var vpc = new IvrVpc(this, $"VPC", schema.VpcProps);
+            IVpc vpc = null;
+            if (!string.IsNullOrWhiteSpace(schema.VpcName))
+            {
+                vpc = Vpc.FromLookup(this, "$VPC", new VpcLookupOptions { VpcName = schema.VpcName, }); // will error if not found
+            }
+            else if (!string.IsNullOrWhiteSpace(schema.VpcId))
+            {
+                vpc = Vpc.FromLookup(this, "$VPC", new VpcLookupOptions { VpcId = schema.VpcId, }); // will error if not found
+            }
+            else if(null != schema.VpcProps)
+            {
+                // use provided props to create brand new VPC
+                vpc = new IvrVpc(this, $"VPC", schema.VpcProps);
+            }
 
-            var s3gw = new GatewayVpcEndpoint(this, $"S3GW", new GatewayVpcEndpointProps 
-            { 
-                Vpc = vpc,
-                Service = GatewayVpcEndpointAwsService.S3, 
-                Subnets = new SubnetSelection[] { new SubnetSelection { SubnetType = SubnetType.PUBLIC, } },
-            });
+            if (schema.AddVpcS3Gateway)
+            {
+                var s3gw = new GatewayVpcEndpoint(this, $"S3GW", new GatewayVpcEndpointProps
+                {
+                    Vpc = vpc,
+                    Service = GatewayVpcEndpointAwsService.S3,
+                    Subnets = new SubnetSelection[] { new SubnetSelection { SubnetType = SubnetType.PUBLIC, } },
+                });
+            }
 
             var role = new Role(this, "IVR", new RoleProps
             {

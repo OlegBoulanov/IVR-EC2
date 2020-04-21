@@ -13,7 +13,9 @@ namespace IvrLib
         public string SiteName { get; set; }
         public IDictionary<string, string> Define { get; set; } = new Dictionary<string, string> {};
         public IDictionary<string, string> Tags { get; set; } = new Dictionary<string, string> {};
-        public IvrVpcProps VpcProps { get; set; } = new IvrVpcProps {};       
+        public IvrVpcProps VpcProps { get; set; }   
+        public string VpcName { get; set; }
+        public string VpcId { get; set; }   
         public string KeyPairName { get; set; }
         public RdpProps RdpProps { get; set; }
         public IEnumerable<string> EC2Users { get; set; }
@@ -28,6 +30,7 @@ namespace IvrLib
         public IEnumerable<PortSpec> IngressPorts { get; set; }
         public bool AllowAllOutbound { get; set; } = true;
         public bool AllowAllIntranet { get; set; } = true;
+        public bool AddVpcS3Gateway { get; set; } = true;
         public S3Buckets S3Buckets { get; set; }
         public string S3iRelease { get; set; }
         public bool Validate()
