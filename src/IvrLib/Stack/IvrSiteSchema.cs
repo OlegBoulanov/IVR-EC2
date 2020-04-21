@@ -27,6 +27,7 @@ namespace IvrLib
         public IEnumerable<string> SipProviders { get; set; } = new List<string> { "Amazon", "Twilio", };
         public IEnumerable<PortSpec> IngressPorts { get; set; }
         public bool AllowAllOutbound { get; set; } = true;
+        public bool AllowAllIntranet { get; set; } = true;
         public S3Buckets S3Buckets { get; set; }
         public string S3iRelease { get; set; }
         public bool Validate()

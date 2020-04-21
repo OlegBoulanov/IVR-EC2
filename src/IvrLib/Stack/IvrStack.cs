@@ -47,7 +47,7 @@ namespace IvrLib
                 AllowAllOutbound = schema.AllowAllOutbound,
             });
             securityGroupRules.ForEach(rule => securityGroup.WithSecurityGroupRule(rule));
-            securityGroup.WithSecurityGroupRule(new IngressRule(Peer.Ipv4($"{vpc.VpcCidrBlock}"), Port.AllTraffic()).WithDescription($"All intranet traffic"));
+            if(schema.AllowAllIntranet) securityGroup.WithSecurityGroupRule(new IngressRule(Peer.Ipv4($"{vpc.VpcCidrBlock}"), Port.AllTraffic()).WithDescription($"All intranet traffic"));
 
             // Finally - create our instances!
             var hosts = new List<HostInstance>();
