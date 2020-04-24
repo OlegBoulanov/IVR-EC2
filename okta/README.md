@@ -21,6 +21,6 @@ Format example:
 ```
 Running the script:
 ```
-    ./okta.sh &lt;account-name&gt;
+    ./okta.sh <account-name>
 ```
 Credentials are written to <b>~/.aws/credentials</b>[&lt;default&gt;]
