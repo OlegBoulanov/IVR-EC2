@@ -33,20 +33,24 @@ namespace IvrLib
         public bool AddVpcS3Gateway { get; set; } = true;
         public S3Buckets S3Buckets { get; set; }
         public string S3iRelease { get; set; }
-        public string ResolveNull(Context ctx, string prop, string propName, string cvarName = null)
+        public string ResolveProperty(Context ctx, string prop, string propName, string cvarName = null)
         {
             if (string.IsNullOrWhiteSpace(prop)) {
                 if(string.IsNullOrWhiteSpace(cvarName)) cvarName = propName;
-                prop = ctx.Resolve(cvarName, help: $"Please define {nameof(IvrSiteSchema)}.{propName}, or use -c {cvarName}=<name>");
+                prop = ctx.Resolve(cvarName, help: $"Please define {nameof(IvrSiteSchema)}.{propName}, or use -c {cvarName}=<value>");
             }
             return prop;
         }
-        public IvrSiteSchema Resolve(Context ctx)
+        public IvrSiteSchema ResolveUndefinedProperties(Context ctx)
         {
             if (string.IsNullOrWhiteSpace(KeyPairName))
             {
-                RdpProps.UserName = ResolveNull(ctx, RdpProps.UserName, $"Rdp.User");
-                RdpProps.Password = ResolveNull(ctx, RdpProps.Password, $"Rdp.Password");
+                RdpProps.UserName = ResolveProperty(ctx, RdpProps.UserName, $"{nameof(RdpProps)}.{nameof(RdpProps.UserName)}", $"Rdp.User");
+                RdpProps.Password = ResolveProperty(ctx, RdpProps.Password, $"{nameof(RdpProps)}.{nameof(RdpProps.Password)}", $"Rdp.Password");
+            }
+            if(0 == (RdpProps.Cidrs?.Count() ?? 0))
+            {
+                RdpProps.Cidrs = ResolveProperty(ctx, null, $"{nameof(RdpProps)}.{nameof(RdpProps.Cidrs)}", $"Rdp.Cidrs").Csv();
             }
             return this;
         }

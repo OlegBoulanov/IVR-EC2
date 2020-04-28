@@ -59,7 +59,7 @@ namespace Ivr
                 {
                     throw new ArgumentException($"Handling of *{ext} format is not implemented (yet)");
                 }
-                schema.Resolve(ctx).Validate().Preprocess();
+                schema.ResolveUndefinedProperties(ctx).Validate().Preprocess();
             }
             var rdpIngressRules = schema.RdpProps.Cidrs.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), "RDP").WithDescription($"RDP client"));
             var sipIngressRules = SipProviders.Select(regionInfo.Name, schema.SipProviders, schema.IngressPorts);
