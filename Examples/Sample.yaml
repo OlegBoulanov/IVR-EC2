@@ -6,7 +6,7 @@ Define:
   "$HOSTNAME$":	Example-
   
 # this domain must be registered with Route53 in advance
-HostedZoneDomain: your-domain.net
+HostedZoneDomain: # provide pre-registered domain name to register IPs with subdomains
 # these are created if needed
 SubdomainEIPs:	sip.$SITENAME$
 SubdomainHosts:	hosts.$SITENAME$
@@ -21,7 +21,7 @@ VpcProps:
 # who and how can RDP to these hosts
 RdpProps: 
   UserName: Rdp
-  Password: 
+  Password: # use -c Rdp.Password=<password>
   Cidrs:
   - 1.2.3.4/32
 
