@@ -33,13 +33,25 @@ namespace IvrLib
         public bool AddVpcS3Gateway { get; set; } = true;
         public S3Buckets S3Buckets { get; set; }
         public string S3iRelease { get; set; }
+        public string ResolveNull(Context ctx, string prop, string propName, string cvarName = null)
+        {
+            if (string.IsNullOrWhiteSpace(prop)) {
+                if(string.IsNullOrWhiteSpace(cvarName)) cvarName = propName;
+                prop = ctx.Resolve(cvarName, help: $"Please define {nameof(IvrSiteSchema)}.{propName}, or use -c {cvarName}=<name>");
+            }
+            return prop;
+        }
         public IvrSiteSchema Resolve(Context ctx)
         {
-            if(string.IsNullOrWhiteSpace(SiteName)) throw new ArgumentException($"{nameof(SiteName)} is not set or empty");
-            if(string.IsNullOrWhiteSpace(KeyPairName) && (string.IsNullOrWhiteSpace(RdpProps.UserName) || string.IsNullOrWhiteSpace(RdpProps.Password))) 
-                throw new ArgumentException($"{nameof(KeyPairName)} or {nameof(RdpProps.UserName)} must be provided");
-            if(!string.IsNullOrWhiteSpace(RdpProps.UserName) && string.IsNullOrWhiteSpace(RdpProps.Password)) 
-                throw new ArgumentException($"{nameof(RdpProps.Password)} must not be provided for {nameof(RdpProps.UserName)}");
+            if (string.IsNullOrWhiteSpace(KeyPairName))
+            {
+                RdpProps.UserName = ResolveNull(ctx, RdpProps.UserName, $"Rdp.User");
+                RdpProps.Password = ResolveNull(ctx, RdpProps.Password, $"Rdp.Password");
+            }
+            return this;
+        }
+        public IvrSiteSchema Validate()
+        {
             if(0 == SipProviders.Count()) 
                 throw new ArgumentException($"No SIP Providers defined in schema");
             if(null == RdpProps.UserGroups || !RdpProps.UserGroups.Contains("RdpUsers")) 
