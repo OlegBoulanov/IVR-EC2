@@ -21,7 +21,7 @@ VpcProps:
 # who and how can RDP to these hosts
 RdpProps: 
   UserName: Rdp
-  Password: Password1
+  Password: 
   Cidrs:
   - 1.2.3.4/32
 
@@ -34,8 +34,8 @@ HostGroups:
     InstanceSize: SMALL
     WindowsVersion: WINDOWS_SERVER_2019_ENGLISH_FULL_BASE
     VolumeSize: 20
-  Install: $INSTALL$/Examples/Config.ini
-  UseElasticIP: true
+  InstallS3i: $INSTALL$/Examples/Config.ini
+  UsePreAllocatedElasticIPs: false
   HostCount: 1
 
 # SIP Providers to select by name
@@ -49,8 +49,8 @@ IngressPorts:
 AllowAllOutbound: true
 
 # org/region-specific config
-S3Suffix: your-company.com
 S3Buckets:
+  Suffix: you-company.com
   ListBucket: 
     - config, install
   GetObject:

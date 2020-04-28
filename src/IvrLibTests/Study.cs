@@ -79,14 +79,23 @@ namespace IvrLibTests
         [Test]
         public void AsSpecificName()
         {
-            Assert.AreEqual("Host_10_0_0_4", $"Host_10.0.0.4".AsCloudFormationId());
+            Assert.AreEqual("Host-10-0-0-4", $"Host_10.0.0.4".AsCloudFormationId());
             Assert.AreEqual("Host_10.0.0.4", $"Host_10.0.0.4".AsWindowsFolder());
             Assert.AreEqual("Host-10-0-0-4", $"Host_10.0.0.4".AsWindowsComputerName());
         }
         [Test]
         public void PathTest()
         {
-            Assert.AreEqual("https://blah-blah/ahh/oh/s.ini/../ooooh/wow.x", Path.Combine(Path.GetPathRoot("https://blah-blah/ahh/oh/s.ini"), "../ooooh/wow.x"));
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var path0 = "https://blah-blah/ahh/oh/s.ini";
+                var path1 = Path.GetPathRoot(path0);
+                var path2 = Path.Combine(path1, "../ooooh/wow.x");
+                Assert.AreEqual("https://blah-blah/ahh/oh/s.ini/../ooooh/wow.x", path2);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+            }
         }
         [Test]
         public void YamlTest()
@@ -127,12 +136,13 @@ namespace IvrLibTests
             var yd = new YamlDotNet.Serialization.DeserializerBuilder().Build();
             var site2 = yd.Deserialize<IvrSiteSchema>(s);
             Assert.AreEqual(2, site2.HostGroups.Count());
-
+/*
             Console.WriteLine("******");
             using(var sr = new StreamReader($"{OSAgnostic.Home}/Projects/CdkTest-1.yaml")) {
                 var site1 = yd.Deserialize<IvrSiteSchema>(sr.ReadToEnd());
                 Console.WriteLine(ys.Serialize(site1));
             }
+*/
         }
     }
 }

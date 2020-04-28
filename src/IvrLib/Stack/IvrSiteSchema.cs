@@ -33,11 +33,11 @@ namespace IvrLib
         public bool AddVpcS3Gateway { get; set; } = true;
         public S3Buckets S3Buckets { get; set; }
         public string S3iRelease { get; set; }
-        public bool Validate()
+        public IvrSiteSchema Resolve(Context ctx)
         {
             if(string.IsNullOrWhiteSpace(SiteName)) throw new ArgumentException($"{nameof(SiteName)} is not set or empty");
             if(string.IsNullOrWhiteSpace(KeyPairName) && (string.IsNullOrWhiteSpace(RdpProps.UserName) || string.IsNullOrWhiteSpace(RdpProps.Password))) 
-                throw new ArgumentException($"{nameof(KeyPairName)} or {nameof(RdpProps.UserName)} must not be provided");
+                throw new ArgumentException($"{nameof(KeyPairName)} or {nameof(RdpProps.UserName)} must be provided");
             if(!string.IsNullOrWhiteSpace(RdpProps.UserName) && string.IsNullOrWhiteSpace(RdpProps.Password)) 
                 throw new ArgumentException($"{nameof(RdpProps.Password)} must not be provided for {nameof(RdpProps.UserName)}");
             if(0 == SipProviders.Count()) 
@@ -46,7 +46,7 @@ namespace IvrLib
                 throw new ArgumentException($"{nameof(RdpProps.UserGroups)} must include 'RdpUsers'");
             if(null == RdpProps.Cidrs || 0 == RdpProps.Cidrs.Count())
                 throw new ArgumentException($"No {nameof(RdpProps.Cidrs)} defined");
-            return true;
+            return this;
         }
         public IvrSiteSchema Preprocess()
         {

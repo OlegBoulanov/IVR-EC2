@@ -25,22 +25,22 @@ namespace Ivr
             var app = new App(new AppProps { });
 
             // can't rely on (incorrect) CDK implementation, so read these files one by one, values from previous may be overridden by those from next
-            var ctx = Context.FromJsonFiles($"{OSAgnostic.Home}/cdk.json", $"cdk.json", app.Node.TryGetContext("ctx") as string);
+            var ctx = Context.FromJsonFiles(app.Node, $"{OSAgnostic.Home}/cdk.json", $"cdk.json", app.Node.TryGetContext("ctx") as string);
 
             // Mandatory parameters are not a part of the schema
-            var accountNumber = app.Node.Resolve(ctx, "account", "CDK_DEFAULT_ACCOUNT");//, $"Please provide account number: -c account=<number>");
+            var accountNumber = ctx.Resolve("account", "CDK_DEFAULT_ACCOUNT");//, $"Please provide account number: -c account=<number>");
             if(string.IsNullOrWhiteSpace(accountNumber)) {
                 accountNumber = new AmazonSecurityTokenServiceClient().GetCallerIdentityAsync(new GetCallerIdentityRequest()).Result.Account;
                 if(string.IsNullOrWhiteSpace(accountNumber)) {
                     throw new ArgumentException($"No account number returned by AWS STS");
                 }
             }
-            var regionName = app.Node.Resolve(ctx, "region", "CDK_DEFAULT_REGION", $"Please provide AWS region: -c region=<region>");
+            var regionName = ctx.Resolve("region", "CDK_DEFAULT_REGION", $"Please provide AWS region: -c region=<region>");
             var regionInfo = RegionInfo.Get(regionName);
             Console.WriteLine($"Account: {accountNumber}/{regionInfo?.Name}, {regionInfo?.DomainSuffix}");
             if(string.IsNullOrWhiteSpace(regionInfo?.DomainSuffix)) throw new ArgumentException($"Invalid region: '{regionName}'");
 
-            var schemaFilePath = app.Node.Resolve(ctx, "schema", help: "Schema file path required: -c schema=<path_to_schema_yaml>");
+            var schemaFilePath = ctx.Resolve("schema", help: "Schema file path required: -c schema=<path_to_schema_yaml>");
             Console.WriteLine($"Schema [{schemaFilePath}]");
             IvrSiteSchema schema;
             using (var sr = new StreamReader(schemaFilePath))
@@ -54,14 +54,12 @@ namespace Ivr
                         var fileName = Path.GetFileNameWithoutExtension(schemaFilePath);
                         schema.SiteName = fileName;
                     }
-                    schema.Validate();
-                    schema.Preprocess();
                 }
                 else
                 {
                     throw new ArgumentException($"Handling of *{ext} format is not implemented (yet)");
                 }
-                //throw new ApplicationException("The rest is not implemented yet");
+                schema.Resolve(ctx).Preprocess();
             }
             var rdpIngressRules = schema.RdpProps.Cidrs.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), "RDP").WithDescription($"RDP client"));
             var sipIngressRules = SipProviders.Select(regionInfo.Name, schema.SipProviders, schema.IngressPorts);

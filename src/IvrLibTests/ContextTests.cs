@@ -14,18 +14,18 @@ namespace IvrLibTests
         [Test]
         public void Collect()
         {
-            var ctxs = new Context().WithJson(testContext1);
+            var ctxs = new Context(null).WithJson(testContext1);
 
             Assert.AreEqual("ctx1-1", ctxs["one"]);
             Assert.AreEqual("ctx1-2", ctxs["two"]);
             Assert.IsFalse(ctxs.ContainsKey("three"));
 
-            ctxs = new Context().WithJson(testContext2);
+            ctxs = new Context(null).WithJson(testContext2);
             Assert.AreEqual("ctx2-1", ctxs["one"]);
             Assert.AreEqual(string.Empty, ctxs["two"]);
             Assert.AreEqual("ctx2-3", ctxs["three"]);
 
-            ctxs = new Context().WithJson(testContext1).WithJson(testContext2);
+            ctxs = new Context(null).WithJson(testContext1).WithJson(testContext2);
             Assert.AreEqual("ctx2-1", ctxs["one"]);
             Assert.AreEqual(string.Empty, ctxs["two"]);
             Assert.AreEqual("ctx2-3", ctxs["three"]);
