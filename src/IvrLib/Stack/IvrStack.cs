@@ -104,9 +104,9 @@ namespace IvrLib
                 }
             }
             // associate pre-allocated EIPs
-            var preAllocatedEIPs = schema.PreAllocatedElasticIPs.SelectMany(s => s.Csv());
-            var hostsThatRequireEIP = hosts.Where(h => h.Group.UsePreAllocatedElasticIPs);
-            if(preAllocatedEIPs.Count() < hostsThatRequireEIP.Count())
+            var preAllocatedEIPs = schema.PreAllocatedElasticIPs?.SelectMany(s => s.Csv()).ToList() ?? new List<string>{};
+            var hostsThatRequireEIP = hosts.Where(h => h.Group.UsePreAllocatedElasticIPs).ToList();
+            if(preAllocatedEIPs.Count < hostsThatRequireEIP.Count)
             {
                 throw new ArgumentException($"Pre-Allocated Elastic IPs needed: {hostsThatRequireEIP.Count()}, but only {preAllocatedEIPs.Count()} configured in schema.{nameof(IvrSiteSchema.PreAllocatedElasticIPs)}");
             }
