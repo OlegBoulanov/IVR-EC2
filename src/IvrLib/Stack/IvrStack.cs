@@ -118,9 +118,6 @@ namespace IvrLib
                     InstanceId = h.Instance.InstanceId,
                 });
             }).ToList();    // execute LINQ now
-            foreach(var a in elasticIPAssociations) {
-                Console.WriteLine($"Pre-Allocated Elastic IP Associations: {a.AllocationId}/{a.InstanceId}");
-            }
             // We have schema.Domain registered in advance
             if (!string.IsNullOrWhiteSpace(schema.HostedZoneDomain))
             {
@@ -140,19 +137,35 @@ namespace IvrLib
                             Domain = "vpc",
                             InstanceId = h.Instance.InstanceId,
                         });
-                    }).ToList();   // collect them now to prevent LINQ Count side effects
-                    var elasticIPs = elasticIPAssociations.Select(eis => eis.Ref).Concat(newElasticIPs.Select(eip => eip.Ref));
-                    if (elasticIPs.Any())
+                    }).ToList();   // collect them now to prevent LINQ side effects         
+                    if (newElasticIPs.Any())
                     {
                         // Register public Elastic IPs
                         var arNewPublic = new ARecord(this, $"ARecord_Public_NewAlloc".AsCloudFormationId(), new ARecordProps
                         {
                             Zone = theZone,
                             RecordName = $"{schema.SubdomainEIPs}.{theZone.ZoneName}",
-                            Target = RecordTarget.FromValues(elasticIPs.ToArray()),
+                            Target = RecordTarget.FromValues(newElasticIPs.Select(eip => eip.Ref).ToArray()),
                             Ttl = Duration.Seconds(300),
                         });
                     } 
+                    else if(elasticIPAssociations.Any())
+                    {
+                        // Register public Elastic IPs
+                        /*
+                        var arPrePublic = new ARecord(this, $"ARecord_Public_PreAlloc".AsCloudFormationId(), new ARecordProps
+                        {
+                            Zone = theZone,
+                            RecordName = $"{schema.SubdomainEIPs}.{theZone.ZoneName}",
+                            Target = RecordTarget.FromValues(elasticIPAssociations.Select(eipa => eipa.Ref).ToArray()), // ***** how to do that?
+                            Ttl = Duration.Seconds(300),
+                        });
+                        */
+                        foreach (var a in elasticIPAssociations)
+                        {
+                            Console.WriteLine($"Pre-Allocated Elastic IP Associations: {a.AllocationId}/{a.InstanceId}, {a.Eip}/{a.PrivateIpAddress}, {a.Ref} - please put it to {schema.SubdomainEIPs}.{theZone.ZoneName} ARecord manually");
+                        }
+                    }
                 }
                 if(0 < hosts.Count && !string.IsNullOrWhiteSpace(schema.SubdomainHosts))
                 {
