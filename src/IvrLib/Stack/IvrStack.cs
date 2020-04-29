@@ -121,14 +121,6 @@ namespace IvrLib
             foreach(var a in elasticIPAssociations) {
                 Console.WriteLine($"Pre-Allocated Elastic IP Associations: {a.AllocationId}/{a.InstanceId}");
             }
-            // Create new Route53 zone           
-            //var theZone = new PublicHostedZone(this, $"{stackId}_Zone", new PublicHostedZoneProps
-            //{
-            //    ZoneName = stackProps.HostsDomainName,
-            //    Comment = "Created by CDK for existing domain",
-            //});
-
-            // or select existing created by registrar
             // We have schema.Domain registered in advance
             if (!string.IsNullOrWhiteSpace(schema.HostedZoneDomain))
             {
@@ -149,21 +141,22 @@ namespace IvrLib
                             InstanceId = h.Instance.InstanceId,
                         });
                     }).ToList();   // collect them now to prevent LINQ Count side effects
-                    if (0 < newElasticIPs.Count)
+                    var elasticIPs = elasticIPAssociations.Select(eis => eis.Ref).Concat(newElasticIPs.Select(eip => eip.Ref));
+                    if (elasticIPs.Any())
                     {
-                        // register (permanent) Elastic IPs
-                        var arPublic = new ARecord(this, $"ARecord_Public_NewAlloc".AsCloudFormationId(), new ARecordProps
+                        // Register public Elastic IPs
+                        var arNewPublic = new ARecord(this, $"ARecord_Public_NewAlloc".AsCloudFormationId(), new ARecordProps
                         {
                             Zone = theZone,
                             RecordName = $"{schema.SubdomainEIPs}.{theZone.ZoneName}",
-                            Target = RecordTarget.FromValues(newElasticIPs.Select(eip => eip.Ref).ToArray()),
+                            Target = RecordTarget.FromValues(elasticIPs.ToArray()),
                             Ttl = Duration.Seconds(300),
                         });
-                    }
+                    } 
                 }
                 if(0 < hosts.Count && !string.IsNullOrWhiteSpace(schema.SubdomainHosts))
                 {
-                    // and private (never changing, as opposed to public - which change on stop/start) addresses of all hosts
+                    // Register private IPs (never changing, as opposed to public - which change on stop/start) addresses of all hosts
                     var arPrivate = new ARecord(this, $"ARecord_Private_".AsCloudFormationId(), new ARecordProps
                     {
                         Zone = theZone,
