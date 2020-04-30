@@ -24,13 +24,16 @@ namespace IvrLib
         public IvrStack(Construct scope, string stackId, StackProps stackProps, IvrSiteSchema schema, IEnumerable<SecurityGroupRule> securityGroupRules) : base(scope, stackId, stackProps)
         {
             IVpc vpc = null;
+            var MaxIpsPerSubnet = IvrVpcProps.MaxIpsPerSubnet;
             if (!string.IsNullOrWhiteSpace(schema.VpcName))
             {
                 vpc = Vpc.FromLookup(this, "$VPC", new VpcLookupOptions { VpcName = schema.VpcName, }); // will error if not found
+                //MaxIpsPerSubnet = ???;
             }
             else if (!string.IsNullOrWhiteSpace(schema.VpcId))
             {
                 vpc = Vpc.FromLookup(this, "$VPC", new VpcLookupOptions { VpcId = schema.VpcId, }); // will error if not found
+                //MaxIpsPerSubnet = ???;
             }
             else if(null != schema.VpcProps)
             {
@@ -65,12 +68,12 @@ namespace IvrLib
 
             // Finally - create our instances!
             var hosts = new List<HostInstance>();
-            for(var subnetIndex = 0; ++subnetIndex <= vpc.PublicSubnets.Length; )
+            for(var subnetIndex = 0; ++subnetIndex <= Math.Min(vpc.PublicSubnets.Length, schema.MaxSubnets); )
             {
                 var hostIndexInSubnet = 0;
                 foreach(var group in schema.HostGroups)
                 {
-                    var numberOfHosts = Math.Min(group.HostCount, IvrVpcProps.MaxIpsPerSubnet);
+                    var numberOfHosts = Math.Min(group.HostCount, MaxIpsPerSubnet);
                     if(numberOfHosts != group.HostCount) {
                         Console.WriteLine($"Group({group.Name}) host count changed from {group.HostCount} to {numberOfHosts}");
                         group.HostCount = numberOfHosts;

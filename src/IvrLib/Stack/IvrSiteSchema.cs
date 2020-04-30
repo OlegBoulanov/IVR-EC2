@@ -16,6 +16,7 @@ namespace IvrLib
         public IvrVpcProps VpcProps { get; set; }   
         public string VpcName { get; set; }
         public string VpcId { get; set; }   
+        public int MaxSubnets { get; set; } = 10;
         public string KeyPairName { get; set; }
         public RdpProps RdpProps { get; set; }
         public IEnumerable<string> EC2Users { get; set; }
