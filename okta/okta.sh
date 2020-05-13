@@ -44,7 +44,7 @@ function print_current_info {
 
 function print_accounts {
         echo Existing accounts \(in ${ACCOUNTS_DIR}/\) are:
-        find ${ACCOUNTS_DIR}/ -mindepth 1 -maxdepth 1 -type d -printf "  %P\n"
+        find ${ACCOUNTS_DIR}/ -mindepth 1 -maxdepth 1 -type d -printf "  %P\n" | sort
 }
 
 if [ -z "${ACCOUNT_NAME}" ]
