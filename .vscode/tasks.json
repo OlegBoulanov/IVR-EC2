@@ -3,40 +3,87 @@
     "tasks": [
         {
             "label": "build",
+            "type": "shell",
             "command": "dotnet",
-            "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/src/Ivr/Ivr.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "${workspaceFolder}/src/Ivr.sln"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "rebuild",
+            "dependsOn":[
+                "clean", "build"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "clean",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "clean",
+                "${workspaceFolder}"
             ],
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "publish",
+            "label": "test",
+            "type": "shell",
             "command": "dotnet",
-            "type": "process",
             "args": [
-                "publish",
-                "${workspaceFolder}/src/Ivr/Ivr.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "test",
+                "${workspaceFolder}/src/Ivr.sln"
+            ],
+            "group": "test",
+            "dependsOn":[ 
+                "build" 
             ],
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "watch",
-            "command": "dotnet",
-            "type": "process",
+            "label": "synth",
+            "command": "cdk",
+            "type": "shell",
             "args": [
-                "watch",
-                "run",
-                "${workspaceFolder}/src/Ivr/Ivr.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "synth",
             ],
             "problemMatcher": "$msCompile"
-        }
+        },
+        {
+            "label": "deploy",
+            "command": "cdk",
+            "type": "shell",
+            "args": [
+                "deploy", 
+                "-v",
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "destroy",
+            "command": "cdk",
+            "type": "shell",
+            "args": [
+                "destroy", 
+                "-v",
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "diff",
+            "command": "cdk",
+            "type": "shell",
+            "args": [
+                "diff", 
+            ],
+            "problemMatcher": "$msCompile"
+        },
     ]
 }

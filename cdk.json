@@ -1,3 +1,6 @@
 {
-  "app": "dotnet run -p src/Ivr/Ivr.csproj"
+  "app": "dotnet run -p src/Ivr/Ivr.csproj",
+  "context": {
+    "comment": "./cdk.json"
+  }
 }

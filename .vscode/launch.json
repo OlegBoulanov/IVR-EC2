@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/src/Ivr/bin/Debug/netcoreapp3.0/Ivr.dll",
+            "program": "${workspaceFolder}/src/Ivr/bin/Debug/netcoreapp3.1/Ivr.dll",
             "args": [],
             "cwd": "${workspaceFolder}/src/Ivr",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console

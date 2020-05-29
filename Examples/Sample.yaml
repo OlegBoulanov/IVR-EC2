@@ -1,0 +1,60 @@
+%YAML 1.1
+--- # Simple configuration example
+Define:
+  "$INSTALL$":	https://raw.githubusercontent.com/OlegBoulanov/s3i/develop
+  "$SITENAME$":	example
+  "$HOSTNAME$":	Example-
+  
+# this domain must be registered with Route53 in advance
+HostedZoneDomain: # provide pre-registered domain name to register IPs with subdomains
+# these are created if needed
+SubdomainEIPs:	sip.$SITENAME$
+SubdomainHosts:	hosts.$SITENAME$
+
+# optional VPC props, if different from default
+VpcProps:
+  VpcCidrAddr: 10.20.0.0
+  VpcCidrMask: 16
+  SubnetCidrMask: 24
+  MaxAzs: 2
+
+# who and how can RDP to these hosts
+RdpProps: 
+  UserName: Rdp
+  Password: # use -c Rdp.Password=<password>
+  Cidrs:
+  - 1.2.3.4/32
+
+# Host groups
+HostNamePrefix: $HOSTNAME$
+HostGroups:
+# One group only
+- InstanceProps:
+    InstanceClass: BURSTABLE3
+    InstanceSize: SMALL
+    WindowsVersion: WINDOWS_SERVER_2019_ENGLISH_FULL_BASE
+    VolumeSize: 20
+  InstallS3i: $INSTALL$/Examples/Config.ini
+  UsePreAllocatedElasticIPs: false
+  HostCount: 1
+
+# SIP Providers to select by name
+SipProviders:
+- Twilio
+
+# ... and corresponding host SIP/RTP ports on hosts
+IngressPorts:
+- { Protocol: SIP, StartPort: 5060, EndPort: 5062 }
+- { Protocol: RTP, StartPort: 5064, EndPort: 5120 }
+AllowAllOutbound: true
+
+# org/region-specific config
+S3Buckets:
+  Suffix: you-company.com
+  ListBucket: 
+    - config, install
+  GetObject:
+    - config, install, logs
+  PutObject:
+    - logs
+...
