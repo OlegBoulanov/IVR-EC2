@@ -106,7 +106,7 @@ namespace IvrLib
         public WindowsCommands WithNewUser(string userName, string userPassword, params string [] addToGroups)
         {
             WithCommands($"$Pwd = ConvertTo-SecureString \"{userPassword}\" -AsPlainText -Force");
-            WithCommands($"New-LocalUser -Name \"{userName}\" -Password $Pwd -Description \"User created by CDK Deploy Command\"");
+            WithCommands($"New-LocalUser -Name \"{userName}\" -Password $Pwd -PasswordNeverExpires -Description \"User created by CDK Deploy Command\"");
             foreach(var group in addToGroups) 
             {
                 WithCommands($"Add-LocalGroupMember -group \"{group}\" -Member \"{userName}\"");
