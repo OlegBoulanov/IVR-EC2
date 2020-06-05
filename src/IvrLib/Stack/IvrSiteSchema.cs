@@ -71,6 +71,8 @@ namespace IvrLib
             if(null == EC2Users || 0 == EC2Users.Count()) EC2Users = new List<string> { RdpProps.UserName ?? "Administrator" };
             // override defaults if values provided
             if(!string.IsNullOrWhiteSpace(S3iRelease)) HostPrimingProps.S3iRelease = S3iRelease;
+            // unwrap CSVs
+            SipProviders = SipProviders.SelectMany(n => n.Csv()).ToList();
             return this;
         }
         public string [] S3Resources(string suffix, params string [] prefixes)
