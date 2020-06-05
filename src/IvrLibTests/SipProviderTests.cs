@@ -63,5 +63,15 @@ namespace IvrLibTests
             Assert.IsTrue(rules[5] is EgressRule);
             Assert.IsTrue(rules[6] is IngressRule);
         }
+        [Test]
+        public void TestSelect()
+        {
+            var ps = SipProviders.Select("us-east-1", new List<string>{ "Amazon", "Twilio", }, new List<PortSpec>{ PortSpec.Parse("SIP 15060-15061"), PortSpec.Parse("RTP 15062-15320"), });
+            //ps.ForEach(x=>Console.WriteLine($"Rule: {x.Description}"));
+            Assert.AreEqual(21, ps.Count());
+            ps = SipProviders.Select("us-east-1", new List<string>{ "Amazon, Twilio", }, new List<PortSpec>{ PortSpec.Parse("SIP 15060-15061"), PortSpec.Parse("RTP 15062-15320"), });
+            //ps.ForEach(x=>Console.WriteLine($"Rule: {x.Description}"));
+            Assert.AreEqual(21, ps.Count());
+        }
     }
 }
