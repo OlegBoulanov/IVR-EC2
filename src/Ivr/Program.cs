@@ -61,6 +61,13 @@ namespace Ivr
                 }
                 schema.ResolveUndefinedProperties(ctx).Validate().Preprocess();
             }
+            var moreTags = new Dictionary<string, string> {
+                { "ToolName", "CDK/IvrStack" },
+                { "ToolUserName", System.Environment.UserName },
+                { "ToolMachineName", System.Environment.MachineName },
+                { "ToolSchemaFilePath", schemaFilePath },
+                //{ "CommandLine", System.Environment.CommandLine },
+            };
             var rdpIngressRules = schema.RdpProps.Cidrs.Select(x => new IngressRule(Peer.Ipv4(x.Trim()), Port.Tcp(3389), "RDP").WithDescription($"RDP client"));
             var sipIngressRules = SipProviders.Select(regionInfo.Name, schema.SipProviders, schema.IngressPorts);
             new IvrStack(app, $"IvrStack-{schema.SiteName}".AsCloudFormationId(), 
@@ -71,7 +78,7 @@ namespace Ivr
                         Account = accountNumber,
                         Region = regionInfo.Name,
                     },
-                    Tags = schema.Tags,
+                    Tags = new Dictionary<string, string>(schema.Tags.Concat(moreTags)),
                 },
                 schema,
                 rdpIngressRules.Concat(sipIngressRules)
